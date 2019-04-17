@@ -204,8 +204,9 @@ function getWaveValueArray(name) {
   return arr;
 }
 
-function getHeightOfLava(pos) {
 
+function getHeightOfLava(pos) {
+  
   var idleChange = 0.0;
   var heightChange = 0.0;
   var shortHeight = 0.0;
@@ -230,8 +231,8 @@ function getHeightOfLava(pos) {
     }
     
   }
-  
-  return heightChange;
+  // Due to some dumb reason, this fixes height calculation discrepencies.
+  return heightChange / 1.74;
 }
 
 function loadLava() {

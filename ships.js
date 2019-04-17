@@ -15,7 +15,7 @@ function Ship(x, y, z) {
     var h = getHeightOfLava(this.position);
     
     
-    this.position[1] = h;
+   this.position[1] =h;
   }
   
 }
