@@ -1,4 +1,5 @@
 var backGroundMusic = null;
+var shipNoise = null;
 var audios = [];
 var muted = true;
 
@@ -11,9 +12,18 @@ function updateGame(elapsedTime) {
   for (var i = 0; i < lavaWaves.length; i++) {
     lavaWaves[i].update(elapsedTime);
   }
+  var shipVolume = 0.0;
   for (var i = 0; i < ships.length; i++) {
     ships[i].update(elapsedTime);
+    var dist = vec3.dist(Eye, ships[i].position) / LAVA_DEPTH;
+    
+    shipVolume += 1.0 / dist / 1000.0;
   }
+  //console.log(shipVolume);
+  //console.log(shipVolume);
+  shipVolume = Math.min(1.0, Math.max(0.0, shipVolume));
+  
+  shipNoise.volume = shipVolume;
   player.update(elapsedTime);
   
 
@@ -41,7 +51,7 @@ function setupGame() {
   player = new Ship(0.5, 0.5, 0.0);
   
   backGroundMusic = createAudio("lava_ambience2.wav", 2.0, true, true);
-  
+  shipNoise = createAudio("shipNoise.wav", 1.0, false, true);
   //backGroundMusic.playBackSpeed = 2.0;
   loadLava();
 }

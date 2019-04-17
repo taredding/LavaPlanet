@@ -168,7 +168,7 @@ function Wave() {
     vec3.add(this.position, this.position, temp);
     
     var dist = vec3.dist(Eye, this.position);
-    this.audio.volume = Math.max(0.0, Math.min(2.0 * this.width * this.height / dist, 1.0));
+    this.audio.volume = Math.max(0.0, Math.min(this.width * this.height / dist, 1.0));
     //console.log(this.audio.volume);
     //console.log(this.audio.volume);
     
