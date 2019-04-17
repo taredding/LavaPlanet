@@ -1,4 +1,4 @@
-const NUM_WAVES = 400;
+const NUM_WAVES = 200;
 const STEPS_PER_DIM = 200;
 const LAVA_WIDTH = 8.0;
 const LAVA_DEPTH = 3.0;
@@ -123,11 +123,13 @@ function Wave() {
   this.position = vec3.create();
   this.velocity = vec3.create();
   
+  this.audio = createAudio("wave2.wav", 1.0, true, true);
+  this.audio.currentTime = 3.5 * 60 * Math.random();
   this.initialize = function() {
     this.speed = (0.005 * Math.random() + 0.005) / 30.0;
     this.height = 0.3 + Math.random() * 0.1;
     this.length = 0.1 + Math.random() * 0.1;
-    this.width = Math.random() / 2.0 + this.length;
+    this.width = Math.random() / 2.0 + this.length * 2.0;
     this.defHeight = this.height;
     this.offset = Math.floor(Math.random() * 360);
     
@@ -164,6 +166,13 @@ function Wave() {
     this.height = this.defHeight + this.defHeight * Math.sin(Date.now() / 10 % 360 * Math.PI / 180 + this.offset);
     vec3.scale(temp, this.direction, this.speed *timePassed);
     vec3.add(this.position, this.position, temp);
+    
+    var dist = vec3.dist(Eye, this.position);
+    this.audio.volume = Math.max(0.0, Math.min(2.0 * this.width * this.height / dist, 1.0));
+    //console.log(this.audio.volume);
+    //console.log(this.audio.volume);
+    
+    
     
     var xOut = (this.position[0] + this.width < -0.6 || this.position[0] - this.width > 1.6);
     var zOut = (this.position[2] - this.width > 0.2 || this.position[2] + this.width < -1.7);

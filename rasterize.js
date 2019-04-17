@@ -193,6 +193,9 @@ function handleKeyDown(event) {
               Eye[1] += viewDelta;
               Center[1] += viewDelta;
             break;
+        case "KeyM": // Mute/Unmute
+          toggleAudio();
+        break;
           
     } // end switch
 } // end handleKeyDown

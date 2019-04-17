@@ -1,3 +1,7 @@
+var backGroundMusic = null;
+var audios = [];
+var muted = true;
+
 var ships = [];
 var frameNum = 0;
 var slowDown = false;
@@ -11,9 +15,13 @@ function updateGame(elapsedTime) {
     ships[i].update(elapsedTime);
   }
   player.update(elapsedTime);
+  
+
+  
 }
 
 function setupGame() {
+  audios = [];
   modelInstances = [];
   lavaPanels = [];
   lavaWaves = [];
@@ -32,9 +40,38 @@ function setupGame() {
   }
   player = new Ship(0.5, 0.5, 0.0);
   
+  backGroundMusic = createAudio("lava_ambience2.wav", 2.0, true, true);
   
-  
+  //backGroundMusic.playBackSpeed = 2.0;
   loadLava();
+}
+
+function createAudio(name, speed, play, loop) {
+  var a = new Audio('audio/' + name);
+  a.volume = 1.0;
+  a.muted = muted;
+  audios.push(a);
+  if (play) {
+    a.play().then(function(){
+      console.log("Started audio '" + name + "' successfully.");
+    }, function (err){
+      console.log("Error playing audio: " + err);
+    });
+  }
+  if (speed != undefined && speed != null) {
+    a.playBackSpeed = speed;
+  }
+  if (loop != undefined && loop != null) {
+    a.loop = loop;
+  }
+  return a;
+}
+
+function toggleAudio() {
+  muted = !muted;
+  for (var i = 0; i < audios.length; i++) {
+    audios[i].muted = muted;
+  }
 }
 
 function main() {
