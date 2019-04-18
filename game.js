@@ -10,10 +10,10 @@ function updateGame(elapsedTime) {
     ships[i].update(elapsedTime, i);
   }
 
-  //Center = vec3.clone(ships[0].position);
-  //Eye = vec3.clone(Center);
-  //Eye[1] += 0.2;
-  //Eye[2] += 0.3;
+  /**Center = vec3.clone(ships[0].position);
+  Eye = vec3.clone(Center);
+  Eye[1] += 0.2;
+  Eye[2] += 0.3;*/
 
 }
 
