@@ -58,13 +58,7 @@ function createAudio(name, speed, play, loop) {
   a.volume = 1.0;
   a.muted = muted;
   audios.push(a);
-  if (play) {
-    a.play().then(function(){
-      console.log("Started audio '" + name + "' successfully.");
-    }, function (err){
-      console.log("Error playing audio: " + err);
-    });
-  }
+  a.shouldAutoPlay = play;
   if (speed != undefined && speed != null) {
     a.playBackSpeed = speed;
   }
@@ -77,6 +71,10 @@ function createAudio(name, speed, play, loop) {
 function toggleAudio() {
   muted = !muted;
   for (var i = 0; i < audios.length; i++) {
+    var a = audios[i];
+    if (a.shouldAutoPlay && !muted) {
+      a.play();
+    }
     audios[i].muted = muted;
   }
 }
