@@ -1,8 +1,13 @@
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-var INPUT_TRIANGLES_URL = "https://taredding.github.io/tempLava/models.json"; // triangles file loc
-var BASE_URL = "https://taredding.github.io/tempLava/";
+//var INPUT_TRIANGLES_URL = "https://taredding.github.io/tempLava/models.json"; // triangles file loc
+//var BASE_URL = "https://taredding.github.io/tempLava/";
+
+var INPUT_TRIANGLES_URL = "http://127.0.0.1/CGA_Proj_3/models.json"; // triangles file loc
+var BASE_URL = "http://127.0.0.1/CGA_Proj_3/";
+
+
 var defaultEye = vec3.fromValues(0.5,0.5,0.5); // default eye position in world space
 
 
@@ -504,6 +509,15 @@ function setupShaders() {
         }
     `;
     
+    var fireVShaderCode = `
+        attribute vec2 aVertexPosition;
+        varying vec2 uv;
+        void main(void) {
+          gl_Position = vec4(aVertexPosition.x, aVertexPosition.y, 0.0, 1.0);
+          uv = vec2((aVertexPosition.x + 1.0) / 2.0, (aVertexPosition.y + 1.0) / 2.0);
+        }
+    `;
+    
     // define fragment shader in essl using es6 template strings
     var fShaderCode = `
         precision mediump float; // set float to medium precision
@@ -593,6 +607,7 @@ function setupShaders() {
             //}
             vec3 heightColor = vec3(val, val, val);
             float mixAmount = max(0.0, vWorldPos.y) * 2.0;
+            mixAmount = 0.0;
             texColor = mix(texColor, texColor2, mixAmount);
             
             vec4 colorOut = vec4((texColor.rgb - heightColor), 1.0);
@@ -614,12 +629,32 @@ function setupShaders() {
               fogAmount = min(1.0, fogAmount);
               colorOut = mix(colorOut, fogColor2, fogAmount);
             } 
-            
-            gl_FragColor = colorOut;
+            vec4 texColor3 = texture2D(u_texture, newUV);
+            gl_FragColor = texColor3;
             
             
         }
     `;
+    
+    var fireFShaderCode = `
+      precision mediump float;
+      varying vec2 uv;
+      uniform sampler2D texture;
+      uniform float temp;
+      void main(void) {
+        //vec2 uv = vec2(gl_FragCoord.x + 1.0, gl_FragCoord.y);
+        vec2 myUV = uv;
+        myUV.y -= 1.0 / 256.0;
+        //myUV.x = 1.0 / 256.0;
+        vec4 cLower = texture2D(texture, myUV);
+        
+        if (myUV.y <= 0.0) {
+          cLower = vec4(0.0, 0.0, 0.0, 1.0);
+        }
+        
+        gl_FragColor = cLower;
+      }
+    `
     
     try {
         var fShader = gl.createShader(gl.FRAGMENT_SHADER); // create frag shader
@@ -744,6 +779,46 @@ function setupShaders() {
                 gl.uniform1i(lavaTex2Uniform, 1);  // texture unit 1
                 
                 lavaShaderProgram = shaderProgram2;
+            } // end if no shader program link errors
+        } // end if no compile errors
+    } // end try 
+    
+    catch(e) {
+        console.log(e);
+    } // end catch
+    
+    try {
+        var fShader = gl.createShader(gl.FRAGMENT_SHADER); // create frag shader
+        gl.shaderSource(fShader,fireFShaderCode); // attach code to shader
+        gl.compileShader(fShader); // compile the code for gpu execution
+
+        var vShader = gl.createShader(gl.VERTEX_SHADER); // create vertex shader
+        gl.shaderSource(vShader,fireVShaderCode); // attach code to shader
+        gl.compileShader(vShader); // compile the code for gpu execution
+            
+        if (!gl.getShaderParameter(fShader, gl.COMPILE_STATUS)) { // bad frag shader compile
+            throw "error during fire fragment shader compile: " + gl.getShaderInfoLog(fShader);  
+            gl.deleteShader(fShader);
+        } else if (!gl.getShaderParameter(vShader, gl.COMPILE_STATUS)) { // bad vertex shader compile
+            throw "error during fire vertex shader compile: " + gl.getShaderInfoLog(vShader);  
+            gl.deleteShader(vShader);
+        } else { // no compile errors
+            var shaderProgram3 = gl.createProgram(); // create the single shader program
+            gl.attachShader(shaderProgram3, fShader); // put frag shader in program
+            gl.attachShader(shaderProgram3, vShader); // put vertex shader in program
+            gl.linkProgram(shaderProgram3); // link program into gl context
+
+            if (!gl.getProgramParameter(shaderProgram2, gl.LINK_STATUS)) { // bad program link
+                throw "error during fire shader program linking: " + gl.getProgramInfoLog(shaderProgram3);
+            } else { // no shader program link errors
+                gl.useProgram(shaderProgram3); // activate shader program (frag and vert)
+                
+                // locate and enable vertex attributes
+                fireVPosAttribLoc = gl.getAttribLocation(shaderProgram3, "aVertexPosition"); // ptr to
+                fireTempUniform = gl.getUniformLocation(shaderProgram3, "temp");
+                
+                
+                fireShaderProgram = shaderProgram3;
             } // end if no shader program link errors
         } // end if no compile errors
     } // end try 
@@ -904,7 +979,7 @@ function renderModels() {
             gl.uniform3fv(lavaEyePositionULoc,Eye);
             
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, lavaTexture1);
+            gl.bindTexture(gl.TEXTURE_2D, fireTexture2);
             
             gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, lavaTexture2);
@@ -915,6 +990,47 @@ function renderModels() {
 
             
         } // end for each triangle set
+      }
+      
+      function renderFire() {
+        gl.viewport(0, 0, 256, 256);
+        gl.useProgram(fireShaderProgram);
+        var temp = fireTexture;
+        fireTexture = fireTexture2;
+        fireTexture2 = temp;
+        
+        //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 200, 0, 255]));
+        
+        //gl.subImage2D(gl.TEXTURE_2D, 0, 0, 0, 256, 256, gl.RGBA, gl.UNSIGNED_BYTE, );
+        
+        attachmentPoint = gl.COLOR_ATTACHMENT0;
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, fireTexture2, 0);
+        
+        function run() {
+
+          
+          
+          gl.uniform1f(fireTempUniform, sinValue);
+          
+          gl.bindBuffer(gl.ARRAY_BUFFER, fireVBuffer);
+          gl.vertexAttribPointer(fireVPosAttribLoc, 2, gl.FLOAT, false, 0, 0);
+          
+          gl.activeTexture(gl.TEXTURE0);
+          gl.bindTexture(gl.TEXTURE_2D, fireTexture);
+          
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,fireTriBuffer);
+          gl.drawElements(gl.TRIANGLES,3 * 2,gl.UNSIGNED_SHORT,0); // render
+          //gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
+        }
+        
+
+        
+
+        run();
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        run();
+        gl.viewport(0, 0, 800, 800);
       }
       
       // var hMatrix = mat4.create(); // handedness matrix
@@ -937,7 +1053,7 @@ function renderModels() {
       
       renderLava();
       renderTriangles();
-      
+      renderFire();
       
       
       renderUpdateTime = Date.now() - renderUpdateTime;

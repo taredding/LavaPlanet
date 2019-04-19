@@ -24,7 +24,7 @@ function updateGame(elapsedTime) {
   shipNoise.volume = shipVolume;
     ships[i].update(elapsedTime, i);
   }
-
+  updateFire(elapsedTime);
   /**Center = vec3.clone(ships[0].position);
   Eye = vec3.clone(Center);
   Eye[1] += 0.2;
@@ -84,6 +84,7 @@ function main() {
   //loadModels(); // load in the models from tri file
   loadResources();
   setupShaders(); // setup the webGL shaders
+  loadFire();
   setupGame();
   renderModels(); // draw the triangles using webGL
 } // end main
