@@ -4,6 +4,7 @@ var fireProgram;
 // need to swap between these every frame
 var fireTexture;
 var fireTexture2;
+var fireNoiseTexture;
 var fireFrameBuffer;
 var fireVPosAttribLoc;
 var fireVertices = new Float32Array([-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0]);
@@ -16,14 +17,21 @@ var fireFrameBuffer;
 var attachmentPoint;
 
 var fireTempUniform;
+var fireUseEffectUniform;
+
+var fireTexUniform;
+var fireNoiseUniform;
+
+var fireNoiseShift = 0.0;
 
 function updateFire(time) {
   return 0.0;
 }
 
 function loadFire() {
-  fireTexture = addTexture(BASE_URL + "textures/" + "placeholder.png");
-  fireTexture2 = addTexture(BASE_URL + "textures/" + "placeholder.png");
+  fireTexture = addTexture(BASE_URL + "textures/" + "black.png");
+  fireTexture2 = addTexture(BASE_URL + "textures/" + "black.png");
+  fireNoiseTexture = addTexture(BASE_URL + "textures/" + "fireNoise.png")
   
   fireFrameBuffer = gl.createFramebuffer();
   

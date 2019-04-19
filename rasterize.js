@@ -640,20 +640,51 @@ function setupShaders() {
       precision mediump float;
       varying vec2 uv;
       uniform sampler2D texture;
+      uniform sampler2D noise;
       uniform float temp;
+      uniform float useEffect;
+      
+      // https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
+      float rand(vec2 co){
+        return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+      }
+      
       void main(void) {
+        float delta = 1.0 / 256.0;
         //vec2 uv = vec2(gl_FragCoord.x + 1.0, gl_FragCoord.y);
         vec2 myUV = uv;
-        myUV.y -= 1.0 / 256.0;
-        //myUV.x = 1.0 / 256.0;
+        myUV.y -= delta;
+          
         vec4 cLower = texture2D(texture, myUV);
-        
-        if (myUV.y <= 0.0) {
-          cLower = vec4(0.0, 0.0, 0.0, 1.0);
+        if (useEffect > 0.5) {
+
+          vec4 cAbove = texture2D(texture, vec2(uv.x, uv.y));
+          vec4 cLeft = texture2D(texture, vec2(uv.x - delta, uv.y));
+          vec4 cRight = texture2D(texture, vec2(uv.x + delta, uv.y));
+          cLower = (cLower + cAbove + cLeft + cRight) / 4.0;
+          //cLower = rand(vec2(uv.x, temp)) * 0.0001 + vec4(1.0, 0.5, 0.5, 1.0);
+          cLower.a = 1.0;
+          if (myUV.y <= 0.0) {
+            //cLower = (temp + uv.x) / 2.0 + vec4(1.0, 0.5, 0.5, 1.0);
+            
+            //cLower = -1.0 * rand(vec2(uv.x, temp)) + vec4(1.0, 0.5, 0.5, 1.0);
+            cLower = texture2D(noise, vec2(uv.x + temp, uv.y));
+            
+            cLower.a = 1.0;
+            
+            
+          }
+          else {
+            float cAmount = 0.0001;
+            //cLower -= vec4(cAmount, cAmount * 0.5, cAmount, 0.0);
+          }
         }
-        
+        else {
+          cLower = texture2D(texture, uv);
+        }
         gl_FragColor = cLower;
       }
+
     `
     
     try {
@@ -816,7 +847,13 @@ function setupShaders() {
                 // locate and enable vertex attributes
                 fireVPosAttribLoc = gl.getAttribLocation(shaderProgram3, "aVertexPosition"); // ptr to
                 fireTempUniform = gl.getUniformLocation(shaderProgram3, "temp");
+                fireUseEffectUniform = gl.getUniformLocation(shaderProgram3, "useEffect");
                 
+                fireTexUniform = gl.getUniformLocation(shaderProgram3, "texture");
+                fireNoiseUniform = gl.getUniformLocation(shaderProgram3, "noise");
+                
+                gl.uniform1i(fireTexUniform, 0);  // texture unit 0
+                gl.uniform1i(fireNoiseUniform, 1);  // texture unit 1
                 
                 fireShaderProgram = shaderProgram3;
             } // end if no shader program link errors
@@ -865,8 +902,9 @@ var startTime = Date.now();
 var endTime = Date.now();
 var lastUpdateTime = Date.now();
 timeSinceLastUpdate = 0;
+var c = 0;
 function renderModels() {
-    
+    c++;
     var gUpdateTime = Date.now();
     updateGame(Date.now() - lastUpdateTime);
     lastUpdateTime = Date.now();
@@ -993,6 +1031,9 @@ function renderModels() {
       }
       
       function renderFire() {
+        if (c % 4 == 0) {
+          fireNoiseShift = Math.random();
+        }
         gl.viewport(0, 0, 256, 256);
         gl.useProgram(fireShaderProgram);
         var temp = fireTexture;
@@ -1007,17 +1048,23 @@ function renderModels() {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
         gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, fireTexture2, 0);
         
-        function run() {
+        function run(val) {
 
           
           
-          gl.uniform1f(fireTempUniform, sinValue);
+          gl.uniform1f(fireTempUniform,fireNoiseShift);
+          gl.uniform1f(fireUseEffectUniform, val);
           
           gl.bindBuffer(gl.ARRAY_BUFFER, fireVBuffer);
           gl.vertexAttribPointer(fireVPosAttribLoc, 2, gl.FLOAT, false, 0, 0);
           
+          
+          
           gl.activeTexture(gl.TEXTURE0);
           gl.bindTexture(gl.TEXTURE_2D, fireTexture);
+          
+          gl.activeTexture(gl.TEXTURE1);
+          gl.bindTexture(gl.TEXTURE_2D, fireNoiseTexture);
           
           gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,fireTriBuffer);
           gl.drawElements(gl.TRIANGLES,3 * 2,gl.UNSIGNED_SHORT,0); // render
@@ -1027,9 +1074,9 @@ function renderModels() {
 
         
 
-        run();
+        run(1.0);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        run();
+        run(0.0);
         gl.viewport(0, 0, 800, 800);
       }
       
