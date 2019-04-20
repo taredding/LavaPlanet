@@ -1,4 +1,4 @@
-const NUM_WAVES = 1;
+const NUM_WAVES = 300;
 const STEPS_PER_DIM = 200;
 const LAVA_WIDTH = 8.0;
 const LAVA_DEPTH = 3.0;

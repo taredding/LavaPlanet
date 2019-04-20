@@ -84,7 +84,8 @@ function main() {
   //loadModels(); // load in the models from tri file
   loadResources();
   setupShaders(); // setup the webGL shaders
-  loadFire();
+  
   setupGame();
+  loadFire();
   renderModels(); // draw the triangles using webGL
 } // end main

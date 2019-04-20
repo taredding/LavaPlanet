@@ -349,6 +349,13 @@ function rotateY (model, amount) {
   vec3.transformMat4(model.xAxis,model.xAxis, rotato);
 }
 
+function rotateX (model, amount) {
+  var rotato = mat4.create();
+  mat4.fromRotation(rotato, amount, vec3.fromValues(1, 0, 0));
+  vec3.transformMat4(model.yAxis, model.yAxis, rotato);
+  vec3.transformMat4(model.xAxis,model.xAxis, rotato);
+}
+
 // get the file from the passed URL
 function getFile(url,descr) {
     try {
@@ -580,7 +587,7 @@ function setupShaders() {
         }
     `;
     
-    var lavaFShaderCode = `
+    var lavaFShaderCode =  `
         
         precision mediump float; // set float to medium precision
         // geometry properties
@@ -607,7 +614,6 @@ function setupShaders() {
             //}
             vec3 heightColor = vec3(val, val, val);
             float mixAmount = max(0.0, vWorldPos.y) * 2.0;
-            mixAmount = 0.0;
             texColor = mix(texColor, texColor2, mixAmount);
             
             vec4 colorOut = vec4((texColor.rgb - heightColor), 1.0);
@@ -629,8 +635,8 @@ function setupShaders() {
               fogAmount = min(1.0, fogAmount);
               colorOut = mix(colorOut, fogColor2, fogAmount);
             } 
-            vec4 texColor3 = texture2D(u_texture, newUV);
-            gl_FragColor = texColor3;
+            
+            gl_FragColor = colorOut;
             
             
         }
@@ -663,14 +669,14 @@ function setupShaders() {
         vec4 texColor = texture2D(texture, newUV + distortion.rb);
         texColor.a = 1.0;
         
-        float grad = mix(1.0, 0.0, uv.y);
+        float grad = mix(1.0, 0.0, 1.6 * uv.y);
         vec4 gradientTexture = vec4(grad, grad, grad, 1.0);
         
         //gl_FragColor = texColor;
         gl_FragColor = gradientTexture + texColor * 0.55;
         gl_FragColor = vec4(gl_FragColor.r, gl_FragColor.r, gl_FragColor.r, 1.0);
         //gl_FragColor = getColorRamp(clamp(gl_FragColor.r, 0.0, 1.0), 0.15);
-        gl_FragColor *= mix(vec4(1.0, 1.0, 0.0, 1.0), vec4(1.0, 0.0, 0.0, 1.0), uv.y);
+        gl_FragColor *= mix(vec4(1.0, 1.0, 0.0, 1.0), vec4(1.0, 0.0, 0.0, 1.0), 1.2 * uv.y);
         
       }
 
@@ -962,8 +968,16 @@ function renderModels() {
             
             gl.uniform1f(alphaUniform, currSet.material.alpha);
             
+            
+            var tex;
+            if (!thisInstance.specialTexture) {
+              tex = textures[thisInstance.realTextureNumber];
+            }
+            else {
+              tex = thisInstance.specialTexture;
+            }
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, textures[thisInstance.realTextureNumber]);
+            gl.bindTexture(gl.TEXTURE_2D, tex);
             
             gl.uniform1i(texToggleUniform, texToggle);
             // triangle buffer: activate and render
@@ -1006,7 +1020,7 @@ function renderModels() {
             gl.uniform3fv(lavaEyePositionULoc,Eye);
             
             gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, fireTexture2);
+            gl.bindTexture(gl.TEXTURE_2D, lavaTexture1);
             
             gl.activeTexture(gl.TEXTURE1);
             gl.bindTexture(gl.TEXTURE_2D, lavaTexture2);
@@ -1029,9 +1043,8 @@ function renderModels() {
         //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 200, 0, 255]));
         
         //gl.subImage2D(gl.TEXTURE_2D, 0, 0, 0, 256, 256, gl.RGBA, gl.UNSIGNED_BYTE, );
-        
-        attachmentPoint = gl.COLOR_ATTACHMENT0;
         gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
+        attachmentPoint = gl.COLOR_ATTACHMENT0;
         gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, fireTexture2, 0);
         
         function run(val) {
@@ -1062,7 +1075,6 @@ function renderModels() {
 
         run(1.0);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        run(0.0);
         gl.viewport(0, 0, 800, 800);
       }
       
@@ -1084,9 +1096,10 @@ function renderModels() {
       mat4.multiply(pvMatrix,pvMatrix,pMatrix); // projection
       mat4.multiply(pvMatrix,pvMatrix,vMatrix); // projection * view
       
+      renderFire();
       renderLava();
       renderTriangles();
-      renderFire();
+      
       
       
       renderUpdateTime = Date.now() - renderUpdateTime;

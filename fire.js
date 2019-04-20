@@ -24,6 +24,8 @@ var fireNoiseUniform;
 
 var fireNoiseShift = 0.0;
 
+var firePanel;
+
 function updateFire(time) {
   return 0.0;
 }
@@ -49,5 +51,11 @@ function loadFire() {
   fireTriBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fireTriBuffer); // activate that buffer
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,fireTriangles,gl.STATIC_DRAW);
+  
+  firePanel = createModelInstance("panel", 0.5, 2.0, LAVA_MIN_Z);
+  scaleUniform(firePanel, 100.0);
+  rotateX(firePanel, Math.PI / 2);
+  textures.push(fireTexture2);
+  firePanel.specialTexture = fireTexture2;
   
 }
