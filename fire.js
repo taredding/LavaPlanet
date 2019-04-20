@@ -36,7 +36,7 @@ function loadFire() {
   // fire 7 and distortion 5 was also good
   fireTexture = addTexture(BASE_URL + "textures/" + "fire7.jpg");
   fireTexture2 = addTexture(BASE_URL + "textures/" + "fire7.jpg");
-  fireNoiseTexture = addTexture(BASE_URL + "textures/" + "distortion5.jpg")
+  fireNoiseTexture = addTexture(BASE_URL + "textures/" + "distortion3.jpg")
   
   fireFrameBuffer = gl.createFramebuffer();
   
@@ -52,10 +52,14 @@ function loadFire() {
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, fireTriBuffer); // activate that buffer
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,fireTriangles,gl.STATIC_DRAW);
   
-  firePanel = createModelInstance("panel", 0.5, 2.0, LAVA_MIN_Z);
-  scaleUniform(firePanel, 100.0);
+  /**firePanel = createModelInstance("panel", 0.5, 1.4, LAVA_MIN_Z, true);
+  
+  
+  //scaleUniform(firePanel, 100.0);
+  scaleModel(firePanel, 100, 50.0, 70.0);
   rotateX(firePanel, Math.PI / 2);
   textures.push(fireTexture2);
   firePanel.specialTexture = fireTexture2;
+  firePanel.ignoreLighting = true;*/
   
 }

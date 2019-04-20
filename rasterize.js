@@ -1,11 +1,11 @@
 /* GLOBAL CONSTANTS AND VARIABLES */
 
 /* assignment specific globals */
-//var INPUT_TRIANGLES_URL = "https://taredding.github.io/tempLava/models.json"; // triangles file loc
-//var BASE_URL = "https://taredding.github.io/tempLava/";
+var INPUT_TRIANGLES_URL = "https://taredding.github.io/tempLava/models.json"; // triangles file loc
+var BASE_URL = "https://taredding.github.io/tempLava/";
 
-var INPUT_TRIANGLES_URL = "http://127.0.0.1/CGA_Proj_3/models.json"; // triangles file loc
-var BASE_URL = "http://127.0.0.1/CGA_Proj_3/";
+//var INPUT_TRIANGLES_URL = "http://127.0.0.1/CGA_Proj_3/models.json"; // triangles file loc
+//var BASE_URL = "http://127.0.0.1/CGA_Proj_3/";
 
 
 var defaultEye = vec3.fromValues(0.5,0.5,0.5); // default eye position in world space
@@ -283,18 +283,28 @@ function loadModel(model) {
             vec3.add(inputTriangles[whichSet].center,inputTriangles[whichSet].center,vtxToAdd); // add to ctr sum
         } // end for vertices in set
         vec3.scale(inputTriangles[whichSet].center,inputTriangles[whichSet].center,1/numVerts); // avg ctr sum
-
+        
+         
         // send the vertex coords and normals to webGL
         vertexBuffers[whichSet] = gl.createBuffer(); // init empty webgl set vertex coord buffer
+        
+        
+        
         gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffers[whichSet]); // activate that buffer
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(inputTriangles[whichSet].glVertices),gl.STATIC_DRAW); // data in
+        
+        inputTriangles.vertBuffer = vertexBuffers[whichSet];
+        
         normalBuffers[whichSet] = gl.createBuffer(); // init empty webgl set normal component buffer
         gl.bindBuffer(gl.ARRAY_BUFFER,normalBuffers[whichSet]); // activate that buffer
         gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(inputTriangles[whichSet].glNormals),gl.STATIC_DRAW); // data in
+        inputTriangles[whichSet].normBuffer = normalBuffers[whichSet];
         
         uvBuffers.push(gl.createBuffer());
         gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffers[whichSet]);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(inputTriangles[whichSet].gluvs), gl.STATIC_DRAW);
+        
+        inputTriangles[whichSet].uvBuffer = uvBuffers[whichSet];
         
         // set up the triangle index array, adjusting indices across sets
         inputTriangles[whichSet].glTriangles = []; // flat index list for webgl
@@ -308,6 +318,9 @@ function loadModel(model) {
         triangleBuffers.push(gl.createBuffer()); // init empty triangle index buffer
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, triangleBuffers[whichSet]); // activate that buffer
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(inputTriangles[whichSet].glTriangles),gl.STATIC_DRAW); // data in
+        
+        inputTriangles.triBuffer = triangleBuffers[whichSet];
+        
     } // end try 
     
     catch(e) {
@@ -570,24 +583,24 @@ function setupShaders() {
             float ndotLight = 2.0*dot(normal, light);
             vec3 reflectVec = normalize(ndotLight*normal - light);
             float highlight = 0.0;
-            if(Blinn_Phong)
+            if(Blinn_Phong) {
            	 	highlight = pow(max(0.0,dot(normal,halfVec)),uShininess);
-           	else 
-           		highlight = pow(max(0.0,dot(normal,reflectVec)),uShininess);
+              vec3 specular = uSpecular*uLightSpecular*highlight; // specular term
+              // combine to output color
+              vec3 colorOut = vec3(ambient + diffuse + specular);
+              vec4 texColor = texture2D(u_texture, uv);
+              gl_FragColor = vec4(texColor.rgb * colorOut, texColor.a * alpha);
+            }
+           	else {
+           		gl_FragColor = texture2D(u_texture, uv);
+            }
 
-            vec3 specular = uSpecular*uLightSpecular*highlight; // specular term
-            
-            // combine to output color
-            vec3 colorOut = vec3(ambient + diffuse + specular);
-            vec4 texColor = texture2D(u_texture, uv);
-            
-            gl_FragColor = vec4(texColor.rgb * colorOut, texColor.a * alpha);
             
             
         }
     `;
     
-    var lavaFShaderCode =  `
+    var lavaFShaderCode = `
         
         precision mediump float; // set float to medium precision
         // geometry properties
@@ -667,17 +680,18 @@ function setupShaders() {
         
         
         vec4 texColor = texture2D(texture, newUV + distortion.rb);
+        texColor += 1.0;
         texColor.a = 1.0;
         
-        float grad = mix(1.0, 0.0, 1.6 * uv.y);
+        float grad = mix(1.0, 0.0, uv.y + 0.45) - 0.1;
         vec4 gradientTexture = vec4(grad, grad, grad, 1.0);
         
         //gl_FragColor = texColor;
         gl_FragColor = gradientTexture + texColor * 0.55;
         gl_FragColor = vec4(gl_FragColor.r, gl_FragColor.r, gl_FragColor.r, 1.0);
         //gl_FragColor = getColorRamp(clamp(gl_FragColor.r, 0.0, 1.0), 0.15);
-        gl_FragColor *= mix(vec4(1.0, 1.0, 0.0, 1.0), vec4(1.0, 0.0, 0.0, 1.0), 1.2 * uv.y);
-        
+        vec4 colorTexture = mix(vec4(1.0, 1.0, 0.5, 1.0), vec4(1.0, 0.4, 0.2, 1.0), 1.2 * uv.y);
+        gl_FragColor *= colorTexture;
       }
 
     `
@@ -956,7 +970,13 @@ function renderModels() {
             gl.uniform3fv(diffuseULoc,currSet.material.diffuse); // pass in the diffuse reflectivity
             gl.uniform3fv(specularULoc,currSet.material.specular); // pass in the specular reflectivity
             gl.uniform1f(shininessULoc,currSet.material.n); // pass in the specular exponent
-            gl.uniform1i(Blinn_PhongULoc, Blinn_Phong);
+            
+            var bp = Blinn_Phong;
+            if (thisInstance.ignoreLighting == true) {
+              bp = false;
+            }
+            
+            gl.uniform1i(Blinn_PhongULoc, bp);
             // vertex buffer: activate and feed into vertex shader
             gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffers[textureNumber]); // activate
             gl.vertexAttribPointer(vPosAttribLoc,3,gl.FLOAT,false,0,0); // feed
@@ -1037,8 +1057,7 @@ function renderModels() {
         if (c % 4 == 0) {
           fireNoiseShift = Math.random();
         }
-        gl.viewport(0, 0, 256, 256);
-        gl.useProgram(fireShaderProgram);
+
         
         //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 200, 0, 255]));
         
@@ -1049,7 +1068,8 @@ function renderModels() {
         
         function run(val) {
 
-          
+                  
+        gl.useProgram(fireShaderProgram);
           
           gl.uniform1f(fireTempUniform, Date.now() % 5000.0);
           gl.uniform1f(fireUseEffectUniform, val);
@@ -1068,13 +1088,15 @@ function renderModels() {
           gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,fireTriBuffer);
           gl.drawElements(gl.TRIANGLES,3 * 2,gl.UNSIGNED_SHORT,0); // render
           //gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
+          
         }
-        
-
-        
-
+        gl.viewport(0, 0, 256, 256);
         run(1.0);
+        gl.viewport(0, 270, 800, 800);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        run(0.0);
+        // Clear depth so that fire appears behind everything
+        gl.clear(gl.DEPTH_BUFFER_BIT);
         gl.viewport(0, 0, 800, 800);
       }
       
