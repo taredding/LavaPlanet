@@ -29,9 +29,12 @@ function updateFire(time) {
 }
 
 function loadFire() {
-  fireTexture = addTexture(BASE_URL + "textures/" + "black.png");
-  fireTexture2 = addTexture(BASE_URL + "textures/" + "black.png");
-  fireNoiseTexture = addTexture(BASE_URL + "textures/" + "fireNoise.png")
+  // fire 7 and distortion 3 was best combo so far
+  // fire 7 and distortion 4 was also good
+  // fire 7 and distortion 5 was also good
+  fireTexture = addTexture(BASE_URL + "textures/" + "fire7.jpg");
+  fireTexture2 = addTexture(BASE_URL + "textures/" + "fire7.jpg");
+  fireNoiseTexture = addTexture(BASE_URL + "textures/" + "distortion5.jpg")
   
   fireFrameBuffer = gl.createFramebuffer();
   

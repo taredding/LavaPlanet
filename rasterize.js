@@ -643,7 +643,7 @@ function setupShaders() {
       uniform sampler2D noise;
       uniform float temp;
       uniform float useEffect;
-      
+
       // https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
       float rand(vec2 co){
         return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -651,38 +651,27 @@ function setupShaders() {
       
       void main(void) {
         float delta = 1.0 / 256.0;
+        vec2 newUV = uv;
         //vec2 uv = vec2(gl_FragCoord.x + 1.0, gl_FragCoord.y);
-        vec2 myUV = uv;
-        myUV.y -= delta;
-          
-        vec4 cLower = texture2D(texture, myUV);
-        if (useEffect > 0.5) {
-
-          vec4 cAbove = texture2D(texture, vec2(uv.x, uv.y));
-          vec4 cLeft = texture2D(texture, vec2(uv.x - delta, uv.y));
-          vec4 cRight = texture2D(texture, vec2(uv.x + delta, uv.y));
-          cLower = (cLower + cAbove + cLeft + cRight) / 4.0;
-          //cLower = rand(vec2(uv.x, temp)) * 0.0001 + vec4(1.0, 0.5, 0.5, 1.0);
-          cLower.a = 1.0;
-          if (myUV.y <= 0.0) {
-            //cLower = (temp + uv.x) / 2.0 + vec4(1.0, 0.5, 0.5, 1.0);
-            
-            //cLower = -1.0 * rand(vec2(uv.x, temp)) + vec4(1.0, 0.5, 0.5, 1.0);
-            cLower = texture2D(noise, vec2(uv.x + temp, uv.y));
-            
-            cLower.a = 1.0;
-            
-            
-          }
-          else {
-            float cAmount = 0.0001;
-            //cLower -= vec4(cAmount, cAmount * 0.5, cAmount, 0.0);
-          }
-        }
-        else {
-          cLower = texture2D(texture, uv);
-        }
-        gl_FragColor = cLower;
+        
+        float texDelta = fract(temp * 0.001 * 0.2);
+        
+        newUV.y -= texDelta;
+        vec4 distortion = texture2D(noise, vec2(uv.x + temp, uv.y)) * 0.1 ;
+        
+        
+        vec4 texColor = texture2D(texture, newUV + distortion.rb);
+        texColor.a = 1.0;
+        
+        float grad = mix(1.0, 0.0, uv.y);
+        vec4 gradientTexture = vec4(grad, grad, grad, 1.0);
+        
+        //gl_FragColor = texColor;
+        gl_FragColor = gradientTexture + texColor * 0.55;
+        gl_FragColor = vec4(gl_FragColor.r, gl_FragColor.r, gl_FragColor.r, 1.0);
+        //gl_FragColor = getColorRamp(clamp(gl_FragColor.r, 0.0, 1.0), 0.15);
+        gl_FragColor *= mix(vec4(1.0, 1.0, 0.0, 1.0), vec4(1.0, 0.0, 0.0, 1.0), uv.y);
+        
       }
 
     `
@@ -1036,9 +1025,6 @@ function renderModels() {
         }
         gl.viewport(0, 0, 256, 256);
         gl.useProgram(fireShaderProgram);
-        var temp = fireTexture;
-        fireTexture = fireTexture2;
-        fireTexture2 = temp;
         
         //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 200, 0, 255]));
         
@@ -1052,7 +1038,7 @@ function renderModels() {
 
           
           
-          gl.uniform1f(fireTempUniform,fireNoiseShift);
+          gl.uniform1f(fireTempUniform, Date.now() % 5000.0);
           gl.uniform1f(fireUseEffectUniform, val);
           
           gl.bindBuffer(gl.ARRAY_BUFFER, fireVBuffer);
