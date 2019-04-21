@@ -569,14 +569,16 @@ function setupShaders() {
         void main(void) {
         
             // ambient term
-            vec3 ambient = uAmbient*uLightAmbient; 
+            vec3 lightColor = vec3(3.0, 2.6, 0.3) * (2.0 - vWorldPos.y);
+            
+            
+            vec3 ambient = uAmbient*lightColor; 
             
             // diffuse term
             vec3 normal = normalize(vVertexNormal); 
-            vec3 light = normalize(uLightPosition - vWorldPos);
+            vec3 light = normalize(vec3(vWorldPos.x, alpha, vWorldPos.z) - vWorldPos);//normalize(uLightPosition - vWorldPos);
             float lambert = max(0.0,dot(normal,light));
-            vec3 diffuse = uDiffuse*uLightDiffuse*lambert; // diffuse term
-            
+            vec3 diffuse = lightColor*lambert; // diffuse term
             // specular term
             vec3 eye = normalize(uEyePosition - vWorldPos);
             vec3 halfVec = normalize(light+eye);
@@ -584,12 +586,44 @@ function setupShaders() {
             vec3 reflectVec = normalize(ndotLight*normal - light);
             float highlight = 0.0;
             if(Blinn_Phong) {
+              
+              
+              
+              
            	 	highlight = pow(max(0.0,dot(normal,halfVec)),uShininess);
-              vec3 specular = uSpecular*uLightSpecular*highlight; // specular term
+              vec3 specular = uSpecular*lightColor*highlight; // specular term
               // combine to output color
-              vec3 colorOut = vec3(ambient + diffuse + specular);
+              vec3 colorOut = vec3(diffuse);
               vec4 texColor = texture2D(u_texture, uv);
-              gl_FragColor = vec4(texColor.rgb * colorOut, texColor.a * alpha);
+              
+              //gl_FragColor = vec4(texColor.rgb * colorOut, texColor.a * alpha);
+              
+              
+              float amount = 2.0 - (vWorldPos.y / 1.5);
+
+              vec3 lightAmount = vec3(amount * 1.0, amount * 1.0, amount * 0.3);
+              
+              colorOut = ambient + diffuse + specular;
+              colorOut *= texColor.rgb;
+              //colorOut += lightColor / 2.0;
+              
+              vec4 fogColor = vec4(1.0, 1.0, 0.5, 1.0);
+              float dist = abs(vWorldPos.z - uEyePosition.z);
+              float fogAmount = 0.0;
+              // fog
+              float effectDist = 1.0;
+              if (dist > effectDist) {
+                dist -= effectDist;
+                fogAmount = dist / effectDist;
+                fogAmount = max(0.0, fogAmount);
+                fogAmount = min(1.0, fogAmount);
+                colorOut = mix(vec4(colorOut, 1.0), fogColor, fogAmount).rgb;
+              }
+              
+              
+              
+              
+              gl_FragColor = vec4(colorOut.rgb, 1.0);
             }
            	else {
            		gl_FragColor = texture2D(u_texture, uv);
@@ -956,6 +990,12 @@ function renderModels() {
             var instanceNumber = whichTriSet;
             
             var thisInstance = modelInstances[whichTriSet];
+            
+            var lavaHeight = 0.0;
+            if (thisInstance.lavaHeight) {
+              lavaHeight = thisInstance.lavaHeight;
+            }
+            
             currSet = modelInstances[instanceNumber];
             makeModelTransform(thisInstance);
             mat4.multiply(pvmMatrix,pvMatrix,mMatrix); // project * view * model
@@ -986,7 +1026,7 @@ function renderModels() {
             gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffers[textureNumber]);
             gl.vertexAttribPointer(uvAttrib, 2, gl.FLOAT, false, 0, 0);
             
-            gl.uniform1f(alphaUniform, currSet.material.alpha);
+            gl.uniform1f(alphaUniform, lavaHeight);
             
             
             var tex;

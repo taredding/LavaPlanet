@@ -21,14 +21,14 @@ function updateGame(elapsedTime) {
   //console.log(shipVolume);
   shipVolume = Math.min(1.0, Math.max(0.0, shipVolume));
   
-  shipNoise.volume = shipVolume;
+  //shipNoise.volume = shipVolume;
     ships[i].update(elapsedTime, i);
   }
   updateFire(elapsedTime);
-  /**Center = vec3.clone(ships[0].position);
-  Eye = vec3.clone(Center);
-  Eye[1] += 0.2;
-  Eye[2] += 0.3;*/
+  //Center = vec3.clone(ships[0].position);
+  //Eye = vec3.clone(Center);
+  //Eye[1] -= 0.2;
+  //Eye[2] += 0.3;
 
 }
 

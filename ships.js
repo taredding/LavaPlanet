@@ -1,11 +1,11 @@
-const NUM_SHIPS = 200;
+const NUM_SHIPS = 100;
 var ships = [];
 const MAX_VELOCITY = 0.03;
 const BOUND_VELOCITY = 0.03;
 const SHIP_MIN_X = -2.5 + 0.5;
 const SHIP_MAX_X = 2.5 - 0.5;
 const SHIP_MIN_Y = 0;
-const SHIP_MAX_Y = 0.5;
+const SHIP_MAX_Y = 1.5;
 const SHIP_MIN_Z = -2 + 0.5;
 const SHIP_MAX_Z = 0.5 - 0.5;
 const SEPARATION_THRESHOLD = 0.015;
@@ -108,6 +108,8 @@ function avoidLava(ship) {
     velocity[1] += 0.5;
   }
   
+  ship.model.lavaHeight = height;
+  
   return velocity;
 }
 
@@ -154,7 +156,7 @@ function calculateCohesion(index) {
 
   var tempCOM = vec3.create();
   vec3.subtract(tempCOM, centerOfMass, ships[index].position);
-  vec3.scale(tempCOM, tempCOM, 0.05);
+  vec3.scale(tempCOM, tempCOM, 0.01);
 
   return tempCOM;
 }
@@ -175,14 +177,14 @@ function calculateAlignment(index) {
 
   return perceivedVelocity;
 }
-
+var dir = 1.0;
 function Ship(x, y, z) {
   this.speed = -0.05;
 
   this.velocity = vec3.fromValues(Math.random() * 0.4, Math.random() * 0.4, Math.random() * 0.4);
   
   this.model = createModelInstance("ship", x, y, z);
-  scaleUniform(this.model, 0.5);
+  scaleUniform(this.model, 1.0);
   this.position = this.model.translation;
   this.model.center = vec3.fromValues(0, 0, 0);
   
@@ -198,10 +200,16 @@ function Ship(x, y, z) {
       vec3.scale(this.velocity, this.velocity, MAX_VELOCITY);
     }
     
-
-    vec3.add(this.position, this.position, this.velocity);
+    //this.position = vec3.set(this.position, 0.2, this.position[1], -0.5);
+    if (this.position[1] < 0.0) {
+      dir = 1;
+    }
+    else if (this.position[1] > 1.5) {
+      dir = -1;
+    }
+    //this.position[1] += dir * 0.01;
     
-    //var h = getHeightOfLava(this.position);
+    vec3.add(this.position, this.position, this.velocity);
     
     
    //this.position[1] = h;
