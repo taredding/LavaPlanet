@@ -10,6 +10,9 @@ const SHIP_MIN_Z = -2 + 0.5;
 const SHIP_MAX_Z = 0.5 - 0.5;
 const SEPARATION_THRESHOLD = 0.015;
 
+var colorPairs = [];
+
+
 /*
 ok so i need a function that calculates the updated velocity for all ships
 
@@ -20,10 +23,46 @@ cohesion
 alignment
 */
 
+function convertColor(color) {
+  return color / 256.0;
+}
+
+function createColor(r, g, b) {
+  return vec3.fromValues(convertColor(r), convertColor(g), convertColor(b));
+}
+
+function createColorPair(r, g, b, r2, g2, b2) {
+  var colors = [];
+  colors.push(createColor(r, g, b));
+  var c2 = createColor(r2, g2, b2);
+  vec3.scale(c2, c2, 0.4);
+  console.log(c2);
+  
+  colors.push(c2);
+  colorPairs.push(colors);
+}
+
+function createColorPairs() {
+  createColorPair(236, 155, 4, 197, 68, 5);
+  createColorPair(163, 73, 164, 47, 56, 174);
+  createColorPair(103, 251, 40, 24, 146, 31);
+  createColorPair(200, 191, 231, 41, 55, 103);
+  createColorPair(163, 73, 164, 103, 251, 40);
+  createColorPair(22, 156, 150, 69, 228, 221);
+  createColorPair(148, 12, 18, 256, 256, 256);
+  createColorPair(97, 83, 20, 97, 83, 20);
+  createColorPair(255, 201, 14, 173, 14, 22);
+  createColorPair(255, 174, 201, 142, 147, 125);
+  createColorPair(175, 31, 27, 112, 146, 190);
+}
 
 /* Spawn ships and push them to array */
 function createShips() {
   ships = [];
+  colorPairs = [];
+  createColorPairs();
+  
+  
   var xScale = SHIP_MAX_X - SHIP_MIN_X;
   var yScale = SHIP_MAX_Y - SHIP_MIN_Y;
   var zScale = SHIP_MAX_Z - SHIP_MIN_Z;
@@ -177,6 +216,55 @@ function calculateAlignment(index) {
 
   return perceivedVelocity;
 }
+function rotateShip(ship) {
+  var model = ship.model;
+  vec3.set(model.yAxis, 0, 1, 0);
+  vec3.set(model.xAxis, 1, 0, 0);
+  
+  var dir = vec3.create();
+  var dir2 = vec3.create();
+  vec3.normalize(dir, ship.velocity);
+  dir2 = vec3.clone(dir);
+  
+  dir[1] = 0.0;
+  dir2[0] = 0.0;
+  var xDir = vec3.angle(dir, vec3.fromValues(1, 0, 0));
+  if (dir[2] < 0) {
+    xDir = 2.0 * Math.PI - xDir;
+  }
+  xDir += Math.PI / 2.0;
+  
+  
+  var yDir = -1.0 * vec3.angle(dir2, Up) + Math.PI / 2.0;
+  if (dir[2] < 0) {
+    yDir *= -1.0;
+  }
+  //console.log(yDir * 57.2958);
+  //console.log(dir[2]);
+  rotateModelInstance(model, 0, xDir);
+  rotateModelInstance(model, yDir, 0);
+}
+function rotateModelInstance(model, xRot, yRot) {
+  
+  var newRotation = mat4.create();
+  mat4.fromRotation(newRotation,xRot,model.xAxis); // get a rotation matrix around passed axis
+  vec3.transformMat4(model.xAxis,model.xAxis,newRotation); // rotate model x axis tip
+  vec3.transformMat4(model.yAxis,model.yAxis,newRotation); // rotate model y axis tip
+  
+  newRotation = mat4.create();
+  mat4.fromRotation(newRotation,yRot,model.yAxis); // get a rotation matrix around passed axis
+  vec3.transformMat4(model.xAxis,model.xAxis,newRotation); // rotate model x axis tip
+  vec3.transformMat4(model.yAxis,model.yAxis,newRotation); // rotate model y axis tip
+  
+}
+
+function getRandomColors() {
+  
+  return colorPairs[Math.floor(Math.random() * colorPairs.length)];
+  
+  
+}
+
 var dir = 1.0;
 function Ship(x, y, z) {
   this.speed = -0.05;
@@ -184,9 +272,18 @@ function Ship(x, y, z) {
   this.velocity = vec3.fromValues(Math.random() * 0.4, Math.random() * 0.4, Math.random() * 0.4);
   
   this.model = createModelInstance("ship", x, y, z);
+  this.model.velocity = this.velocity;
   scaleUniform(this.model, 1.0);
   this.position = this.model.translation;
   this.model.center = vec3.fromValues(0, 0, 0);
+  
+  
+  
+  var colors = getRandomColors();
+  this.model.colorOffset = colors[0];
+  this.model.colorOffset2 = colors[1];
+  
+  vec3.normalize(this.model.colorOffset, this.model.colorOffset);
   
   this.update = function(time, shipIndex) {
     var elapsedSeconds = time / 1000;
@@ -210,9 +307,10 @@ function Ship(x, y, z) {
     //this.position[1] += dir * 0.01;
     
     vec3.add(this.position, this.position, this.velocity);
-    
+    rotateShip(this);
     
    //this.position[1] = h;
   }
   
 }
+

@@ -25,11 +25,15 @@ function updateGame(elapsedTime) {
     ships[i].update(elapsedTime, i);
   }
   updateFire(elapsedTime);
-  //Center = vec3.clone(ships[0].position);
-  //Eye = vec3.clone(Center);
-  //Eye[1] -= 0.2;
-  //Eye[2] += 0.3;
 
+  //watchShip(0);
+}
+
+function watchShip(shipNum) {
+  Center = vec3.clone(ships[shipNum].position);
+  Eye = vec3.clone(Center);
+  Eye[1] += 0.4;
+  Eye[2] += 0.3;
 }
 
 function setupGame() {

@@ -572,7 +572,7 @@ function setupShaders() {
             vec3 lightColor = vec3(3.0, 2.6, 0.3) * (2.0 - vWorldPos.y);
             
             
-            vec3 ambient = uAmbient*lightColor; 
+            vec3 ambient = 1.0*lightColor; 
             
             // diffuse term
             vec3 normal = normalize(vVertexNormal); 
@@ -596,28 +596,32 @@ function setupShaders() {
               vec3 colorOut = vec3(diffuse);
               vec4 texColor = texture2D(u_texture, uv);
               
-              //gl_FragColor = vec4(texColor.rgb * colorOut, texColor.a * alpha);
+              float intensity = texColor.r + 0.4;
+              // ship windsheild and fin tip color
+              vec3 color1 = texColor.g * intensity * uLightPosition;       
+              vec3 color2 = texColor.b * intensity * uAmbient;
+              texColor = vec4(color1 + color2, 1.0);
               
               
-              float amount = 2.0 - (vWorldPos.y / 1.5);
+              //float amount = max(0.0, 2.0 - (vWorldPos.y / 1.5));
 
-              vec3 lightAmount = vec3(amount * 1.0, amount * 1.0, amount * 0.3);
+              //vec3 lightAmount = vec3(amount * 1.0, amount * 1.0, amount * 0.3);
               
               colorOut = ambient + diffuse + specular;
               colorOut *= texColor.rgb;
-              //colorOut += lightColor / 2.0;
               
-              vec4 fogColor = vec4(1.0, 1.0, 0.5, 1.0);
+              vec4 fogColor = vec4(1.0, 1.0, 0.7, 1.0);
               float dist = abs(vWorldPos.z - uEyePosition.z);
               float fogAmount = 0.0;
+              
               // fog
-              float effectDist = 1.0;
+              float effectDist = 1.2;
               if (dist > effectDist) {
                 dist -= effectDist;
                 fogAmount = dist / effectDist;
                 fogAmount = max(0.0, fogAmount);
                 fogAmount = min(1.0, fogAmount);
-                colorOut = mix(vec4(colorOut, 1.0), fogColor, fogAmount).rgb;
+                colorOut = mix(vec4(colorOut, 1.0), fogColor, fogAmount * min(max(1.0 / vWorldPos.y, 0.0), 1.0)).rgb;
               }
               
               
@@ -1003,10 +1007,20 @@ function renderModels() {
             gl.uniformMatrix4fv(pvmMatrixULoc, false, pvmMatrix); // pass in the hpvm matrix
             
             
-            gl.uniform3fv(lightPositionULoc,lightPosition);
+            var colorOffset = lightPosition;
+            if (thisInstance.colorOffset) {
+              colorOffset = thisInstance.colorOffset;
+            }
+            gl.uniform3fv(lightPositionULoc,colorOffset);
             
             // reflectivity: feed to the fragment shader
-            gl.uniform3fv(ambientULoc,currSet.material.ambient); // pass in the ambient reflectivity
+            
+            var colorOffset2 = currSet.material.ambient;
+            if (thisInstance.colorOffset) {
+              colorOffset2 = thisInstance.colorOffset2;
+            }
+            
+            gl.uniform3fv(ambientULoc,colorOffset2); // pass in the ambient reflectivity
             gl.uniform3fv(diffuseULoc,currSet.material.diffuse); // pass in the diffuse reflectivity
             gl.uniform3fv(specularULoc,currSet.material.specular); // pass in the specular reflectivity
             gl.uniform1f(shininessULoc,currSet.material.n); // pass in the specular exponent
