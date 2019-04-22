@@ -6,6 +6,7 @@ var muted = true;
 var ships = [];
 var frameNum = 0;
 var slowDown = false;
+var counter = 0.0;
 function updateGame(elapsedTime) {
   frameNum++;
   
@@ -25,8 +26,9 @@ function updateGame(elapsedTime) {
     ships[i].update(elapsedTime, i);
   }
   updateFire(elapsedTime);
-
-  watchShip(0);
+  counter += Math.PI / 1000.0 * elapsedTime;
+  mothership.translation[1] = MOTHERSHIP_HEIGHT + 0.1 * Math.sin(counter);
+  //watchShip(0);
 }
 
 function watchShip(shipNum) {

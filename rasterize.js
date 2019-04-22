@@ -48,7 +48,7 @@ var shininessULoc; // where to put specular exponent for fragment shader
 var Blinn_PhongULoc;
 var muted = true;
 var uvAttrib;
-
+var sinValue = Date.now() / 60 % 360 * (Math.PI * 2.0);
 
 /* interaction variables */
 var Eye = vec3.clone(defaultEye); // eye position in world space
@@ -569,7 +569,7 @@ function setupShaders() {
         void main(void) {
         
             // ambient term
-            vec3 lightColor = vec3(3.0, 2.6, 0.3) * (2.0 - vWorldPos.y);
+            vec3 lightColor = vec3(1.0, 1.0, 0.3) * (2.5 - vWorldPos.y);
             
             
             vec3 ambient = 1.0*lightColor; 
@@ -596,19 +596,20 @@ function setupShaders() {
               vec3 colorOut = vec3(diffuse);
               vec4 texColor = texture2D(u_texture, uv);
               
-              float intensity = texColor.r + 0.8;
+              float intensity = texColor.r + 0.4;
               // ship windsheild and fin tip color
               vec3 color1 = texColor.g * intensity * uLightPosition;       
               vec3 color2 = texColor.b * intensity * uAmbient;
-              texColor = vec4(color2, 1.0);
+              texColor = vec4(color1 + color2, 1.0);
+              
               
               //float amount = max(0.0, 2.0 - (vWorldPos.y / 1.5));
 
               //vec3 lightAmount = vec3(amount * 1.0, amount * 1.0, amount * 0.3);
               
               colorOut = ambient + diffuse + specular;
-              colorOut *= texColor.rgb;
-              
+              colorOut *= 0.8 * texColor.rgb;
+              //gl_FragColor = vec4(colorOut, 1.0);
               vec4 fogColor = vec4(1.0, 1.0, 0.7, 1.0);
               float dist = abs(vWorldPos.z - uEyePosition.z);
               float fogAmount = 0.0;
@@ -625,8 +626,8 @@ function setupShaders() {
               
               
               
-              texColor.a = 1.0;
-              gl_FragColor = texColor;//vec4(colorOut.rgb, 1.0);
+              
+              gl_FragColor = vec4(colorOut.rgb, 1.0);
             }
            	else {
            		gl_FragColor = texture2D(u_texture, uv);

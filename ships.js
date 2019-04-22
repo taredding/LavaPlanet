@@ -41,10 +41,11 @@ function createColorPair(r, g, b, r2, g2, b2) {
   
   colors.push(c2);
   colorPairs.push(colors);
+  return colors;
 }
 
 function createColorPairs() {
-  /**createColorPair(236, 155, 4, 197, 68, 5);
+  createColorPair(236, 155, 4, 197, 68, 5);
   createColorPair(163, 73, 164, 47, 56, 174);
   createColorPair(103, 251, 40, 24, 146, 31);
   createColorPair(200, 191, 231, 41, 55, 103);
@@ -54,16 +55,15 @@ function createColorPairs() {
   createColorPair(97, 83, 20, 97, 83, 20);
   createColorPair(255, 201, 14, 173, 14, 22);
   createColorPair(255, 174, 201, 142, 147, 125);
-  createColorPair(175, 31, 27, 112, 146, 190);*/
-  createColorPair(256, 0, 0, 0, 256, 0);
+  createColorPair(175, 31, 27, 112, 146, 190);
+  //createColorPair(256, 0, 0, 0, 256, 0);
 }
 
 /* Spawn ships and push them to array */
 function createShips() {
   ships = [];
   colorPairs = [];
-  createColorPairs();
-  
+  var mColors = createColorPair(69, 20, 20, 20, 69, 20);
   // mothership
   mothership = createModelInstance("mothership", 0.5, MOTHERSHIP_HEIGHT, -2.5);
   rotateX(mothership,-1.0 * Math.PI / 2);
@@ -71,8 +71,11 @@ function createShips() {
   rotateX(mothership,-1.0 * Math.PI / 2);
   rotateX(mothership,2.0 * Math.PI / 2);
   scaleUniform(mothership, 4.0);
+  mothership.colorOffset = mColors[0];
+  mothership.colorOffset2 = mColors[1];
   
-  
+  colorPairs = [];
+  createColorPairs();
   
   var xScale = SHIP_MAX_X - SHIP_MIN_X;
   var yScale = SHIP_MAX_Y - SHIP_MIN_Y;
@@ -149,7 +152,7 @@ function avoidLava(ship) {
   
   if (ship.position[1] < lavaLoc[1]) {
     console.log("Ship hit lava!");
-    vec3.set(ship.position, SHIP_MAX_X, 0.5, SHIP_MAX_Z);
+    vec3.set(ship.position, mothership.translation[0], mothership.translation[1], mothership.translation[2]);
   }
   
   var distance = vec3.distance(ship.position, lavaLoc);
