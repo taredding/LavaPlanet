@@ -8,5 +8,10 @@
     "name": "panel",
     "material": {"ambient": [1.0,1.0,1.0], "diffuse": [1.0,1.0,1.0], "specular": [1.0,1.0,1.0], "n": 1, "alpha": 1.0, "texture": "lava3.jpg"},
     "model": "panel.obj"
+  },
+  {
+    "name": "mothership",
+    "material": {"ambient": [1.0,1.0,1.0], "diffuse": [1.0,1.0,1.0], "specular": [1.0,1.0,1.0], "n": 1, "alpha": 1.0, "texture": "mothership.png"},
+    "model": "mothership_turtle.obj"
   }
 ]

@@ -1,4 +1,4 @@
-const NUM_SHIPS = 100;
+const NUM_SHIPS = 200;
 var ships = [];
 const MAX_VELOCITY = 0.03;
 const BOUND_VELOCITY = 0.03;
@@ -9,9 +9,10 @@ const SHIP_MAX_Y = 1.5;
 const SHIP_MIN_Z = -2 + 0.5;
 const SHIP_MAX_Z = 0.5 - 0.5;
 const SEPARATION_THRESHOLD = 0.015;
+const MOTHERSHIP_HEIGHT = 2.0;
 
 var colorPairs = [];
-
+var mothership;
 
 /*
 ok so i need a function that calculates the updated velocity for all ships
@@ -61,6 +62,15 @@ function createShips() {
   ships = [];
   colorPairs = [];
   createColorPairs();
+  
+  // mothership
+  mothership = createModelInstance("mothership", 0.5, MOTHERSHIP_HEIGHT, -2.5);
+  rotateX(mothership,-1.0 * Math.PI / 2);
+  rotateY(mothership,-1.0 * Math.PI / 2);
+  rotateX(mothership,-1.0 * Math.PI / 2);
+  rotateX(mothership,2.0 * Math.PI / 2);
+  scaleUniform(mothership, 4.0)
+  
   
   
   var xScale = SHIP_MAX_X - SHIP_MIN_X;
