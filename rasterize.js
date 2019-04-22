@@ -596,12 +596,11 @@ function setupShaders() {
               vec3 colorOut = vec3(diffuse);
               vec4 texColor = texture2D(u_texture, uv);
               
-              float intensity = texColor.r + 0.4;
+              float intensity = texColor.r + 0.8;
               // ship windsheild and fin tip color
               vec3 color1 = texColor.g * intensity * uLightPosition;       
               vec3 color2 = texColor.b * intensity * uAmbient;
-              texColor = vec4(color1 + color2, 1.0);
-              
+              texColor = vec4(color2, 1.0);
               
               //float amount = max(0.0, 2.0 - (vWorldPos.y / 1.5));
 
@@ -626,8 +625,8 @@ function setupShaders() {
               
               
               
-              
-              gl_FragColor = vec4(colorOut.rgb, 1.0);
+              texColor.a = 1.0;
+              gl_FragColor = texColor;//vec4(colorOut.rgb, 1.0);
             }
            	else {
            		gl_FragColor = texture2D(u_texture, uv);

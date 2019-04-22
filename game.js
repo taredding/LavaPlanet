@@ -26,7 +26,7 @@ function updateGame(elapsedTime) {
   }
   updateFire(elapsedTime);
 
-  //watchShip(0);
+  watchShip(0);
 }
 
 function watchShip(shipNum) {
