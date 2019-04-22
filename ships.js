@@ -9,7 +9,7 @@ const SHIP_MAX_Y = 1.5;
 const SHIP_MIN_Z = -2 + 0.5;
 const SHIP_MAX_Z = 0.5 - 0.5;
 const SEPARATION_THRESHOLD = 0.015;
-const MOTHERSHIP_HEIGHT = 2.0;
+const MOTHERSHIP_HEIGHT = 1.5;
 
 var colorPairs = [];
 var mothership;

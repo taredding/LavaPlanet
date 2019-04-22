@@ -1107,23 +1107,16 @@ function renderModels() {
         } // end for each triangle set
       }
       
-      function renderFire() {
-        if (c % 4 == 0) {
-          fireNoiseShift = Math.random();
-        }
-
-        
-        //gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 200, 0, 255]));
-        
-        //gl.subImage2D(gl.TEXTURE_2D, 0, 0, 0, 256, 256, gl.RGBA, gl.UNSIGNED_BYTE, );
+      function renderFireToTexture(input, noise, texture, renderToBackground) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
         attachmentPoint = gl.COLOR_ATTACHMENT0;
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, fireTexture2, 0);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture, 0);
+        gl.useProgram(fireShaderProgram);
         
-        function run(val) {
+        function run(input, noise, val) {
 
                   
-        gl.useProgram(fireShaderProgram);
+        
           
           gl.uniform1f(fireTempUniform, Date.now() % 5000.0);
           gl.uniform1f(fireUseEffectUniform, val);
@@ -1134,24 +1127,25 @@ function renderModels() {
           
           
           gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, fireTexture);
+          gl.bindTexture(gl.TEXTURE_2D, input);
           
           gl.activeTexture(gl.TEXTURE1);
-          gl.bindTexture(gl.TEXTURE_2D, fireNoiseTexture);
+          gl.bindTexture(gl.TEXTURE_2D, noise);
           
           gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,fireTriBuffer);
           gl.drawElements(gl.TRIANGLES,3 * 2,gl.UNSIGNED_SHORT,0); // render
-          //gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
           
         }
         gl.viewport(0, 0, 256, 256);
-        run(1.0);
-        gl.viewport(0, 270, 800, 800);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-        run(0.0);
-        // Clear depth so that fire appears behind everything
-        gl.clear(gl.DEPTH_BUFFER_BIT);
-        gl.viewport(0, 0, 800, 800);
+        run(input, noise, 1.0);
+        if (renderToBackground) {
+          gl.viewport(0, 270, 800, 800);
+          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+          run(input, noise, 0.0);
+          // Clear depth so that fire appears behind everything
+          gl.clear(gl.DEPTH_BUFFER_BIT);
+          gl.viewport(0, 0, 800, 800);
+        }
       }
       
       // var hMatrix = mat4.create(); // handedness matrix
@@ -1172,7 +1166,7 @@ function renderModels() {
       mat4.multiply(pvMatrix,pvMatrix,pMatrix); // projection
       mat4.multiply(pvMatrix,pvMatrix,vMatrix); // projection * view
       
-      renderFire();
+      renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true);
       renderLava();
       renderTriangles();
       
