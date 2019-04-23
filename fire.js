@@ -36,7 +36,7 @@ function loadFire() {
   // fire 7 and distortion 5 was also good
   fireTexture = addTexture(BASE_URL + "textures/" + "fire7.jpg");
   fireTexture2 = addNullTexture();//addTexture(BASE_URL + "textures/" + "fire7.jpg");
-  fireNoiseTexture = addTexture(BASE_URL + "textures/" + "distortion3.jpg")
+  fireNoiseTexture = addTexture(BASE_URL + "textures/" + "distortion3.jpg");
   
   fireFrameBuffer = gl.createFramebuffer();
   

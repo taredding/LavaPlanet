@@ -30,7 +30,7 @@ function updateGame(elapsedTime) {
   var val = 0.1 * Math.sin(counter);
   mothership.translation[1] = MOTHERSHIP_HEIGHT + val;
   for (var i = 0; i < beams.length; i++) {
-    beams[i].translation[1] = BEAM_HEIGHT + val;
+    beams[i].translation[1] = BEAM_HEIGHT + 1.1 * 0.1 * Math.sin(counter + beams[i].offset); ;
   }
   
   //watchShip(0);

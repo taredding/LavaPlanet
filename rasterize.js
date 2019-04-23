@@ -630,7 +630,21 @@ function setupShaders() {
               gl_FragColor = vec4(colorOut.rgb, 1.0);
             }
            	else {
-           		gl_FragColor = texture2D(u_texture, uv);
+              vec4 texColor = texture2D(u_texture, uv);
+              vec4 fogColor = vec4(1.0, 1.0, 0.7, 1.0);
+              float dist = abs(vWorldPos.z - uEyePosition.z);
+              float fogAmount = 0.0;
+              
+              // fog
+              float effectDist = 1.2;
+              if (dist > effectDist) {
+                dist -= effectDist;
+                fogAmount = dist / effectDist;
+                fogAmount = max(0.0, fogAmount);
+                fogAmount = min(1.0, fogAmount);
+                texColor = mix(texColor, fogColor, fogAmount * min(max(1.0 / vWorldPos.y, 0.0) - 0.4, 1.0));
+              }
+           		gl_FragColor = texColor;
               gl_FragColor.a = 1.0;
             }
 
@@ -1169,6 +1183,7 @@ function renderModels() {
       mat4.multiply(pvMatrix,pvMatrix,vMatrix); // projection * view
       
       renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true);
+      renderFireToTexture(beamTexture, beamNoiseTexture, beamOutputTexture, false);
       renderLava();
       renderTriangles();
       

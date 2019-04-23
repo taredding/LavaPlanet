@@ -14,8 +14,12 @@ const BEAM_HEIGHT = MOTHERSHIP_HEIGHT - 0.44;
 
 var colorPairs = [];
 var beams = [];
+var beamTexture;
+var beamNoiseTexture;
+var beamOutputTexture;
 
 var mothership;
+
 
 /*
 ok so i need a function that calculates the updated velocity for all ships
@@ -82,9 +86,13 @@ function createShips() {
   
   
   var beam1 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
+  beam1.offset = 0.3;
   var beam2 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
+  beam2.offset = 0.1;
   var beam3 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
+  beam3.offset = 0.1;
   var beam4 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
+  beam4.offset = 0.3;
   beams.push(beam1);
   beams.push(beam2);
   beams.push(beam3);
@@ -93,8 +101,11 @@ function createShips() {
   vec3.set(beam2.translation, mothership.translation[0] + 0.415, BEAM_HEIGHT,  mothership.translation[2] + 0.6);
   vec3.set(beam3.translation, mothership.translation[0] - 0.4, BEAM_HEIGHT, mothership.translation[2] - 0.6);
   vec3.set(beam4.translation, mothership.translation[0] + 0.415, BEAM_HEIGHT, mothership.translation[2] -0.6);
+  beamTexture = addTexture(BASE_URL + "textures/" + "webby.png");
+  beamNoiseTexture = addTexture(BASE_URL + "textures/" + "distortion2.jpg");
+  beamOutputTexture = addNullTexture();
   for (var i = 0; i < beams.length; i++) {
-    beams[i].specialTexture = fireTexture2;
+    beams[i].specialTexture = beamOutputTexture;
     beams[i].ignoreLighting = true;
     rotateY(beams[i], Math.PI);
     scaleUniform(beams[i], 3.7);
