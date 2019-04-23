@@ -631,6 +631,7 @@ function setupShaders() {
             }
            	else {
            		gl_FragColor = texture2D(u_texture, uv);
+              gl_FragColor.a = 1.0;
             }
 
             
@@ -1127,7 +1128,7 @@ function renderModels() {
           
           
           gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, input);
+          gl.bindTexture(gl.TEXTURE_2D, input);gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
           
           gl.activeTexture(gl.TEXTURE1);
           gl.bindTexture(gl.TEXTURE_2D, noise);
@@ -1138,9 +1139,10 @@ function renderModels() {
         }
         gl.viewport(0, 0, 256, 256);
         run(input, noise, 1.0);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        gl.viewport(0, 0, 800, 800);
         if (renderToBackground) {
           gl.viewport(0, 270, 800, 800);
-          gl.bindFramebuffer(gl.FRAMEBUFFER, null);
           run(input, noise, 0.0);
           // Clear depth so that fire appears behind everything
           gl.clear(gl.DEPTH_BUFFER_BIT);
@@ -1260,6 +1262,27 @@ function addTexture(resourceURL) {
   myImage.src = resourceURL;
   handleImageLoad(textures[whichSet], myImage);
   return textures[textures.length - 1];
+}
+
+function addNullTexture() {
+  const targetTexture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, targetTexture);
+  // define size and format of level 0
+  const level = 0;
+  const internalFormat = gl.RGBA;
+  const border = 0;
+  const format = gl.RGBA;
+  const type = gl.UNSIGNED_BYTE;
+  const data = null;
+  gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
+                256, 256, border,
+                format, type, data);
+ 
+  // set the filtering so we don't need mips
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return targetTexture;
 }
 function loadResources() {
   var resources = getJSONFile(BASE_URL + "resources.json", "resources");

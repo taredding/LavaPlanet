@@ -27,7 +27,12 @@ function updateGame(elapsedTime) {
   }
   updateFire(elapsedTime);
   counter += Math.PI / 1000.0 * elapsedTime;
-  mothership.translation[1] = MOTHERSHIP_HEIGHT + 0.1 * Math.sin(counter);
+  var val = 0.1 * Math.sin(counter);
+  mothership.translation[1] = MOTHERSHIP_HEIGHT + val;
+  for (var i = 0; i < beams.length; i++) {
+    beams[i].translation[1] = BEAM_HEIGHT + val;
+  }
+  
   //watchShip(0);
 }
 
@@ -43,7 +48,7 @@ function setupGame() {
   modelInstances = [];
   lavaPanels = [];
   lavaWaves = [];
-
+  loadFire();
   createShips();
 
   for (var i = 0; i < NUM_WAVES - 13; i++) {
@@ -92,6 +97,5 @@ function main() {
   setupShaders(); // setup the webGL shaders
   
   setupGame();
-  loadFire();
   renderModels(); // draw the triangles using webGL
 } // end main

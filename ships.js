@@ -10,8 +10,11 @@ const SHIP_MIN_Z = -2 + 0.5;
 const SHIP_MAX_Z = 0.5 - 0.5;
 const SEPARATION_THRESHOLD = 0.015;
 const MOTHERSHIP_HEIGHT = 1.5;
+const BEAM_HEIGHT = MOTHERSHIP_HEIGHT - 0.44;
 
 var colorPairs = [];
+var beams = [];
+
 var mothership;
 
 /*
@@ -63,6 +66,9 @@ function createColorPairs() {
 function createShips() {
   ships = [];
   colorPairs = [];
+  beams = [];
+  
+  
   var mColors = createColorPair(69, 20, 20, 20, 69, 20);
   // mothership
   mothership = createModelInstance("mothership", 0.5, MOTHERSHIP_HEIGHT, -2.5);
@@ -73,6 +79,27 @@ function createShips() {
   scaleUniform(mothership, 4.0);
   mothership.colorOffset = mColors[0];
   mothership.colorOffset2 = mColors[1];
+  
+  
+  var beam1 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
+  var beam2 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
+  var beam3 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
+  var beam4 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
+  beams.push(beam1);
+  beams.push(beam2);
+  beams.push(beam3);
+  beams.push(beam4);
+  vec3.set(beam1.translation, mothership.translation[0] - 0.4, BEAM_HEIGHT, mothership.translation[2] + 0.6);
+  vec3.set(beam2.translation, mothership.translation[0] + 0.415, BEAM_HEIGHT,  mothership.translation[2] + 0.6);
+  vec3.set(beam3.translation, mothership.translation[0] - 0.4, BEAM_HEIGHT, mothership.translation[2] - 0.6);
+  vec3.set(beam4.translation, mothership.translation[0] + 0.415, BEAM_HEIGHT, mothership.translation[2] -0.6);
+  for (var i = 0; i < beams.length; i++) {
+    beams[i].specialTexture = fireTexture2;
+    beams[i].ignoreLighting = true;
+    rotateY(beams[i], Math.PI);
+    scaleUniform(beams[i], 3.7);
+  }
+  
   
   colorPairs = [];
   createColorPairs();

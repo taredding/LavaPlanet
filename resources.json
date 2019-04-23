@@ -13,5 +13,10 @@
     "name": "mothership",
     "material": {"ambient": [1.0,1.0,1.0], "diffuse": [1.0,1.0,1.0], "specular": [1.0,1.0,1.0], "n": 1, "alpha": 1.0, "texture": "mothershipRGB.png"},
     "model": "mothership_turtle.obj"
+  },
+  {
+    "name": "beam",
+    "material": {"ambient": [1.0,1.0,1.0], "diffuse": [1.0,1.0,1.0], "specular": [1.0,1.0,1.0], "n": 1, "alpha": 1.0, "texture": "mothershipRGB.png"},
+    "model": "beam2.obj"
   }
 ]
