@@ -91,6 +91,15 @@ var lookAt = vec3.create(), viewRight = vec3.create(), temp = vec3.create(); // 
 lookAt = vec3.normalize(lookAt,vec3.subtract(temp,Center,Eye)); // get lookat vector
 viewRight = vec3.normalize(viewRight,vec3.cross(temp,lookAt,Up)); // get view right vector
 
+
+var sceneBuffer;
+var sceneTexture;
+var depthTexture;
+var colorOffsetUniform;
+var colorOff = vec3.create();
+var inversion = false;
+var inversionUniform;
+
 // ASSIGNMENT HELPER FUNCTIONS
 
 // get the JSON file from the passed URL
@@ -715,36 +724,53 @@ function setupShaders() {
       uniform sampler2D noise;
       uniform float temp;
       uniform float useEffect;
-
+      uniform vec3 colorOffset;
+      uniform bool invert;
       // https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
       float rand(vec2 co){
         return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
       }
       
       void main(void) {
-        float delta = 1.0 / 256.0;
-        vec2 newUV = uv;
-        //vec2 uv = vec2(gl_FragCoord.x + 1.0, gl_FragCoord.y);
-        
-        float texDelta = fract(temp * 0.001 * 0.2);
-        
-        newUV.y -= texDelta;
-        vec4 distortion = texture2D(noise, vec2(uv.x + temp, uv.y)) * 0.1 ;
-        
-        
-        vec4 texColor = texture2D(texture, newUV + distortion.rb);
-        texColor += 1.0;
-        texColor.a = 1.0;
-        
-        float grad = mix(1.0, 0.0, uv.y + 0.45) - 0.1;
-        vec4 gradientTexture = vec4(grad, grad, grad, 1.0);
-        
-        //gl_FragColor = texColor;
-        gl_FragColor = gradientTexture + texColor * 0.55;
-        gl_FragColor = vec4(gl_FragColor.r, gl_FragColor.r, gl_FragColor.r, 1.0);
-        //gl_FragColor = getColorRamp(clamp(gl_FragColor.r, 0.0, 1.0), 0.15);
-        vec4 colorTexture = mix(vec4(1.0, 1.0, 0.5, 1.0), vec4(1.0, 0.4, 0.2, 1.0), 1.2 * uv.y);
-        gl_FragColor *= colorTexture;
+        if (useEffect > 0.5 && useEffect < 1.1) {
+          float delta = 1.0 / 256.0;
+          vec2 newUV = uv;
+          //vec2 uv = vec2(gl_FragCoord.x + 1.0, gl_FragCoord.y);
+          
+          float texDelta = fract(temp * 0.001 * 0.2);
+          
+          newUV.y -= texDelta;
+          vec4 distortion = texture2D(noise, vec2(uv.x + temp, uv.y)) * 0.1 ;
+          
+          
+          vec4 texColor = texture2D(texture, newUV + distortion.rb);
+          texColor += 1.0;
+          texColor.a = 1.0;
+          
+          float grad = mix(1.0, 0.0, uv.y + 0.45) - 0.1;
+          vec4 gradientTexture = vec4(grad, grad, grad, 1.0);
+          
+          //gl_FragColor = texColor;
+          gl_FragColor = gradientTexture + texColor * 0.55;
+          gl_FragColor = vec4(gl_FragColor.r, gl_FragColor.r, gl_FragColor.r, 1.0);
+          //gl_FragColor = getColorRamp(clamp(gl_FragColor.r, 0.0, 1.0), 0.15);
+          vec4 colorTexture = mix(vec4(1.0, 1.0, 0.5, 1.0), vec4(1.0, 0.4, 0.2, 1.0), 1.2 * uv.y);
+          gl_FragColor *= colorTexture;
+        }
+        else if (useEffect > 2.0) {
+          float tex_offset = 1.0 / 800.0; 
+          vec4 result = texture2D(texture, uv) * 1.0;
+          if (invert) {
+            result.rgb = 1.0 - result.rgb;
+          }
+          
+          result.rgb += colorOffset;
+          result.a = 1.0;
+          gl_FragColor = result;
+        }
+        else {
+          gl_FragColor = texture2D(texture, uv);
+        }
       }
 
     `
@@ -910,10 +936,10 @@ function setupShaders() {
                 fireVPosAttribLoc = gl.getAttribLocation(shaderProgram3, "aVertexPosition"); // ptr to
                 fireTempUniform = gl.getUniformLocation(shaderProgram3, "temp");
                 fireUseEffectUniform = gl.getUniformLocation(shaderProgram3, "useEffect");
-                
+                inversionUniform = gl.getUniformLocation(shaderProgram3, "invert");
                 fireTexUniform = gl.getUniformLocation(shaderProgram3, "texture");
                 fireNoiseUniform = gl.getUniformLocation(shaderProgram3, "noise");
-                
+                colorOffsetUniform = gl.getUniformLocation(shaderProgram3, "colorOffset");
                 gl.uniform1i(fireTexUniform, 0);  // texture unit 0
                 gl.uniform1i(fireNoiseUniform, 1);  // texture unit 1
                 
@@ -925,6 +951,28 @@ function setupShaders() {
     catch(e) {
         console.log(e);
     } // end catch
+    var ext = gl.getExtension( "WEBKIT_WEBGL_depth_texture" );
+    console.log("extension: " + ext);
+    //depthTexture = addNullTexture(800);
+    sceneTexture = addNullTexture(800);
+    sceneBuffer = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, sceneBuffer);
+    
+    
+    
+    var depth = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, depth);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT, 800, 800, 0, gl.DEPTH_COMPONENT, gl.UNSIGNED_SHORT, null);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri( gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    
+    
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, depth, 0);
+    
+    
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sceneTexture, 0);
 } // end setup shaders
 
 
@@ -1121,28 +1169,25 @@ function renderModels() {
             
         } // end for each triangle set
       }
-      
-      function renderFireToTexture(input, noise, texture, renderToBackground) {
-        gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
-        attachmentPoint = gl.COLOR_ATTACHMENT0;
-        gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture, 0);
-        gl.useProgram(fireShaderProgram);
-        
-        function run(input, noise, val) {
+      function run(input, noise, val, ignoreMovement) {
 
                   
         
-          
-          gl.uniform1f(fireTempUniform, Date.now() % 5000.0);
+          var time = 0.0;
+          if (!ignoreMovement) {
+            time = Date.now() % 5000.0;
+          }
+          gl.uniform1f(fireTempUniform, time);
           gl.uniform1f(fireUseEffectUniform, val);
-          
+          gl.uniform3fv(colorOffsetUniform, colorOff);
           gl.bindBuffer(gl.ARRAY_BUFFER, fireVBuffer);
           gl.vertexAttribPointer(fireVPosAttribLoc, 2, gl.FLOAT, false, 0, 0);
           
           
-          
+          gl.uniform1i(inversionUniform, inversion);
           gl.activeTexture(gl.TEXTURE0);
-          gl.bindTexture(gl.TEXTURE_2D, input);gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+          gl.bindTexture(gl.TEXTURE_2D, input);
+          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
           
           gl.activeTexture(gl.TEXTURE1);
           gl.bindTexture(gl.TEXTURE_2D, noise);
@@ -1150,14 +1195,21 @@ function renderModels() {
           gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,fireTriBuffer);
           gl.drawElements(gl.TRIANGLES,3 * 2,gl.UNSIGNED_SHORT,0); // render
           
-        }
+      }
+      function renderFireToTexture(input, noise, texture, renderToBackground, fb) {
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
+        attachmentPoint = gl.COLOR_ATTACHMENT0;
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture, 0);
+        gl.useProgram(fireShaderProgram);
+        
+
         gl.viewport(0, 0, 256, 256);
-        run(input, noise, 1.0);
-        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        run(input, noise, 1.0, false);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
         gl.viewport(0, 0, 800, 800);
         if (renderToBackground) {
           gl.viewport(0, 270, 800, 800);
-          run(input, noise, 0.0);
+          run(input, noise, 1.0, false);
           // Clear depth so that fire appears behind everything
           gl.clear(gl.DEPTH_BUFFER_BIT);
           gl.viewport(0, 0, 800, 800);
@@ -1182,12 +1234,21 @@ function renderModels() {
       mat4.multiply(pvMatrix,pvMatrix,pMatrix); // projection
       mat4.multiply(pvMatrix,pvMatrix,vMatrix); // projection * view
       
-      renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true);
-      renderFireToTexture(beamTexture, beamNoiseTexture, beamOutputTexture, false);
-      renderLava();
+      
+      
+
+      gl.bindFramebuffer(gl.FRAMEBUFFER, sceneBuffer);
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sceneTexture, 0);
+      //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+      renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true, sceneBuffer);
+      renderFireToTexture(beamTexture, beamNoiseTexture, beamOutputTexture, false, sceneBuffer);
       renderTriangles();
+      renderLava();
       
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       
+      gl.useProgram(fireShaderProgram);
+      run(sceneTexture, fireNoiseTexture, 2.2, true);
       
       renderUpdateTime = Date.now() - renderUpdateTime;
       endTime = Date.now();
@@ -1279,7 +1340,7 @@ function addTexture(resourceURL) {
   return textures[textures.length - 1];
 }
 
-function addNullTexture() {
+function addNullTexture(width) {
   const targetTexture = gl.createTexture();
 gl.bindTexture(gl.TEXTURE_2D, targetTexture);
   // define size and format of level 0
@@ -1290,7 +1351,7 @@ gl.bindTexture(gl.TEXTURE_2D, targetTexture);
   const type = gl.UNSIGNED_BYTE;
   const data = null;
   gl.texImage2D(gl.TEXTURE_2D, level, internalFormat,
-                256, 256, border,
+                width, width, border,
                 format, type, data);
  
   // set the filtering so we don't need mips
@@ -1299,6 +1360,25 @@ gl.bindTexture(gl.TEXTURE_2D, targetTexture);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   return targetTexture;
 }
+
+function updateColors() {
+  var r = document.getElementById("rOff").value / 100.0;
+  var g = document.getElementById("gOff").value / 100.0;
+  var b = document.getElementById("bOff").value / 100.0;
+  colorOff = vec3.fromValues(r, g, b);
+}
+
+function resetColors() {
+  document.getElementById("rOff").value = 0.0;
+  document.getElementById("gOff").value = 0.0;
+  document.getElementById("bOff").value = 0.0;
+  colorOff = vec3.fromValues(0.0, 0.0, 0.0);
+}
+
+function invert() {
+  inversion = !inversion;
+}
+
 function loadResources() {
   var resources = getJSONFile(BASE_URL + "resources.json", "resources");
   

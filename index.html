@@ -23,6 +23,11 @@
         Avg Time Updating Game: <label id="gameLogicTime">---</label> <br />
         Avg Time Updating Graphics: <label id="renderTime">---</label> <br />
         <button onclick="toggleAudio()">Toggle Audio</button> <br />
+        Red:   <input type="range" min="-100" max="100" value="0" class="slider" id="rOff" oninput="updateColors()"> <br />
+        Green: <input type="range" min="-100" max="100" value="0" class="slider" id="gOff" oninput="updateColors()"><br />
+        Blue:  <input type="range" min="-100" max="100" value="0" class="slider" id="bOff" oninput="updateColors()"><br />
+        <button onclick="resetColors()">Reset colors</button> <br />
+        <button onclick="invert()">Invert colors</button> <br />
       </div>
     </div>
   </body>

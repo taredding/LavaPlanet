@@ -10,7 +10,7 @@ const SHIP_MIN_Z = -2 + 0.5;
 const SHIP_MAX_Z = 0.5 - 0.5;
 const SEPARATION_THRESHOLD = 0.015;
 const MOTHERSHIP_HEIGHT = 1.5;
-const BEAM_HEIGHT = MOTHERSHIP_HEIGHT - 0.44;
+const BEAM_HEIGHT = MOTHERSHIP_HEIGHT - 0.42;
 
 var colorPairs = [];
 var beams = [];
@@ -102,8 +102,8 @@ function createShips() {
   vec3.set(beam3.translation, mothership.translation[0] - 0.4, BEAM_HEIGHT, mothership.translation[2] - 0.6);
   vec3.set(beam4.translation, mothership.translation[0] + 0.415, BEAM_HEIGHT, mothership.translation[2] -0.6);
   beamTexture = addTexture(BASE_URL + "textures/" + "webby.png");
-  beamNoiseTexture = addTexture(BASE_URL + "textures/" + "distortion2.jpg");
-  beamOutputTexture = addNullTexture();
+  beamNoiseTexture = addTexture(BASE_URL + "textures/" + "black.png");
+  beamOutputTexture = addNullTexture(256);
   for (var i = 0; i < beams.length; i++) {
     beams[i].specialTexture = beamOutputTexture;
     beams[i].ignoreLighting = true;
