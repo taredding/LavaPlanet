@@ -5,7 +5,7 @@
 var BASE_URL = "https://taredding.github.io/tempLava/";
 
 //var INPUT_TRIANGLES_URL = "http://127.0.0.1/CGA_Proj_3/models.json"; // triangles file loc
-//var BASE_URL = "http://127.0.0.1/CGA_Proj_3/";
+var BASE_URL = "http://127.0.0.1/CGA_Proj_3/";
 
 
 var defaultEye = vec3.fromValues(0.5,0.5,0.5); // default eye position in world space

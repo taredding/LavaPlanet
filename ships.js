@@ -44,7 +44,7 @@ function createColorPair(r, g, b, r2, g2, b2) {
   colors.push(createColor(r, g, b));
   var c2 = createColor(r2, g2, b2);
   vec3.scale(c2, c2, 0.4);
-  console.log(c2);
+  //console.log(c2);
   
   colors.push(c2);
   colorPairs.push(colors);
@@ -328,7 +328,9 @@ function Ship(x, y, z) {
   scaleUniform(this.model, 1.0);
   this.position = this.model.translation;
   this.model.center = vec3.fromValues(0, 0, 0);
-  
+  this.thruster = createModelInstance("thruster", x, y, z);
+  this.thruster.ignoreLighting = true;
+  this.thruster.translation = this.model.translation;
   
   
   var colors = getRandomColors();
@@ -360,7 +362,10 @@ function Ship(x, y, z) {
     
     vec3.add(this.position, this.position, this.velocity);
     rotateShip(this);
-    
+    this.thruster.yAxis = this.model.yAxis;
+    this.thruster.xAxis = this.model.xAxis;
+    var val = 0.005 * ( 1.0 + Math.sin(counter * 16.0)) + 0.02;
+    vec3.set(this.thruster.scaling, val, val, 0.022);
    //this.position[1] = h;
   }
   
