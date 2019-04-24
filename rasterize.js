@@ -1255,7 +1255,7 @@ function renderModels() {
       
       
       
-
+      if (usePostProcessing >= 2.1) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, sceneBuffer);
       gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sceneTexture, 0);
       //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -1268,6 +1268,14 @@ function renderModels() {
       
       gl.useProgram(fireShaderProgram);
       run(sceneTexture, heatDistortionTexture, usePostProcessing, false);
+      }
+      else {
+        
+        renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true, null);
+        renderFireToTexture(beamTexture, beamNoiseTexture, beamOutputTexture, false, null);
+        renderTriangles();
+        renderLava(); 
+      }
       
       renderUpdateTime = Date.now() - renderUpdateTime;
       endTime = Date.now();
