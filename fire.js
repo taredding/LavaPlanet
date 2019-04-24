@@ -21,10 +21,12 @@ var fireUseEffectUniform;
 
 var fireTexUniform;
 var fireNoiseUniform;
+var fireBloomUniform;
 
 var fireNoiseShift = 0.0;
 
 var firePanel;
+var heatDistortionTexture;
 
 function updateFire(time) {
   return 0.0;
@@ -37,6 +39,7 @@ function loadFire() {
   fireTexture = addTexture(BASE_URL + "textures/" + "fire7.jpg");
   fireTexture2 = addNullTexture(256);//addTexture(BASE_URL + "textures/" + "fire7.jpg");
   fireNoiseTexture = addTexture(BASE_URL + "textures/" + "distortion3.jpg");
+  heatDistortionTexture = addTexture(BASE_URL + "textures/" + "distortion13.jpg");
   
   fireFrameBuffer = gl.createFramebuffer();
   
