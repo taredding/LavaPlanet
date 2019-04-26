@@ -100,6 +100,9 @@ var colorOff = vec3.create();
 var inversion = false;
 var inversionUniform;
 var usePostProcessing = 2.2;
+var bloomIntensityUniform;
+var bloomThresholdUniform;
+var sceneIntensityUniform;
 
 // ASSIGNMENT HELPER FUNCTIONS
 
@@ -728,6 +731,10 @@ function setupShaders() {
       uniform vec3 colorOffset;
       uniform bool invert;
       uniform float bloomWeights[10];
+      uniform float bloomThreshold;
+      uniform float bloomWeight;
+      uniform float sceneWeight;
+      
       // https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
       float rand(vec2 co){
         return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -765,23 +772,28 @@ function setupShaders() {
           vec4 distortion = texture2D(noise, vec2(uv.x + temp, uv.y - texDelta)) * 0.03 ;
           vec4 result = texture2D(texture, uv + distortion.bg);
           
-
-          
-          vec4 lighting = vec4(0.0, 0.0, 0.0, 0.0);
-          for (int i = 0; i < 20; i++) {
-            vec4 result2 = texture2D(texture, vec2(uv.x, uv.y - float(i) * tex_offset)) * 1.0;
-            if (length(result2) >= 1.9) {
-              lighting += result2 * bloomWeights[i / 2];
-            }
-          }
-          result = result + 0.2 * lighting;
-          result.a = 1.0;
-          
           if (invert) {
             result.rgb = 1.0 - result.rgb;
           }
           
           result.rgb += colorOffset;
+          
+          vec4 lighting = vec4(0.0, 0.0, 0.0, 0.0);
+          for (int i = 0; i < 20; i++) {
+            vec4 result2 = texture2D(texture, vec2(uv.x, uv.y - float(i) * tex_offset)) * 1.0;
+            if (invert) {
+              result2.rgb = 1.0 - result2.rgb;
+            }
+          
+            result2.rgb += colorOffset;
+            if (length(result2) >= bloomThreshold) {
+              lighting += result2 * bloomWeights[i / 2];
+            }
+          }
+          result = sceneWeight * result + bloomWeight * lighting;
+          result.a = 1.0;
+          
+
           result.a = 1.0;
           
           gl_FragColor = result;
@@ -962,7 +974,13 @@ function setupShaders() {
                 gl.uniform1i(fireNoiseUniform, 1);  // texture unit 1
                 fireBloomUniform = gl.getUniformLocation(shaderProgram3, "bloomWeights");
                 gl.uniform1fv(fireBloomUniform, new Float32Array([0.227027, 0.1945946, 0.1216216, 0.054054, 0.016216]));
+                
+                bloomThresholdUniform = gl.getUniformLocation(shaderProgram3, "bloomThreshold");
+                bloomIntensityUniform = gl.getUniformLocation(shaderProgram3, "bloomWeight");
+                sceneIntensityUniform = gl.getUniformLocation(shaderProgram3, "sceneWeight");
+                
                 fireShaderProgram = shaderProgram3;
+                
             } // end if no shader program link errors
         } // end if no compile errors
     } // end try 
@@ -1214,6 +1232,11 @@ function renderModels() {
           gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,fireTriBuffer);
           gl.drawElements(gl.TRIANGLES,3 * 2,gl.UNSIGNED_SHORT,0); // render
           
+          
+          gl.uniform1f(sceneIntensityUniform, sceneIntensity);
+          gl.uniform1f(bloomIntensityUniform, bloomIntensity);
+          gl.uniform1f(bloomThresholdUniform, bloomThreshold);
+          
       }
       function renderFireToTexture(input, noise, texture, renderToBackground, fb) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
@@ -1394,11 +1417,20 @@ function updateColors() {
   var b = document.getElementById("bOff").value / 100.0;
   colorOff = vec3.fromValues(r, g, b);
 }
+function updateBloom() {
+  bloomIntensity = document.getElementById("bloomInt").value / 100.0;
+  bloomThreshold = document.getElementById("bloomThresh").value / 100.0;
+  sceneIntensity = document.getElementById("sceneInt").value / 100.0;
+}
 
 function resetColors() {
   document.getElementById("rOff").value = 0.0;
   document.getElementById("gOff").value = 0.0;
   document.getElementById("bOff").value = 0.0;
+  document.getElementById("bloomInt").value = 20;
+  document.getElementById("bloomThresh").value = 190;
+  document.getElementById("sceneInt").value = 100;
+  updateBloom();
   colorOff = vec3.fromValues(0.0, 0.0, 0.0);
   inversion = false;
 }

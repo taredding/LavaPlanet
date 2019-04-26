@@ -28,6 +28,12 @@ var fireNoiseShift = 0.0;
 var firePanel;
 var heatDistortionTexture;
 
+
+
+var bloomIntensity = 0.2;
+var bloomThreshold = 1.9;
+var sceneIntensity = 1.0;
+
 function updateFire(time) {
   return 0.0;
 }

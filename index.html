@@ -26,6 +26,9 @@
         Red:   <input type="range" min="-100" max="100" value="0" class="slider" id="rOff" oninput="updateColors()"> <br />
         Green: <input type="range" min="-100" max="100" value="0" class="slider" id="gOff" oninput="updateColors()"><br />
         Blue:  <input type="range" min="-100" max="100" value="0" class="slider" id="bOff" oninput="updateColors()"><br />
+        Bloom Intensity:  <input type="range" min="-100" max="100" value="20" class="slider" id="bloomInt" oninput="updateBloom()"><br />
+        Bloom Threshold:  <input type="range" min="0" max="400" value="190" class="slider" id="bloomThresh" oninput="updateBloom()"><br />
+        Scene Intensity:  <input type="range" min="0" max="100" value="100" class="slider" id="sceneInt" oninput="updateBloom()"><br />
         <button onclick="resetColors()">Reset colors</button> <br />
         <button onclick="invert()">Invert colors</button> <br />
         <button onclick="togglePostProcessing()">Toggle Post Processing</button> <br />
