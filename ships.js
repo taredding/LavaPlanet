@@ -20,7 +20,7 @@ var beamNoiseTexture;
 var beamOutputTexture;
 var explosionTexture;
 var explosionC1 = vec3.fromValues(0.5, 1.0, 0.5);
-var explosionC2 = vec3.fromValues(0.2, 1.0, 0.1);
+var explosionC2 = vec3.fromValues(0.9, 1.0, 0.9);
 
 var mothership;
 
