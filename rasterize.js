@@ -5,7 +5,7 @@
 var BASE_URL = "https://taredding.github.io/tempLava/";
 
 //var INPUT_TRIANGLES_URL = "http://127.0.0.1/CGA_Proj_3/models.json"; // triangles file loc
-//var BASE_URL = "http://127.0.0.1/CGA_Proj_3/";
+var BASE_URL = "http://127.0.0.1/CGA_Proj_3/";
 
 
 var defaultEye = vec3.fromValues(0.5,0.5,0.5); // default eye position in world space
@@ -735,6 +735,9 @@ function setupShaders() {
       uniform float bloomWeight;
       uniform float sceneWeight;
       
+      uniform vec3 color1;
+      uniform vec3 color2;
+      
       // https://stackoverflow.com/questions/4200224/random-noise-functions-for-glsl
       float rand(vec2 co){
         return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -763,7 +766,8 @@ function setupShaders() {
           gl_FragColor = gradientTexture + texColor * 0.55;
           gl_FragColor = vec4(gl_FragColor.r, gl_FragColor.r, gl_FragColor.r, 1.0);
           //gl_FragColor = getColorRamp(clamp(gl_FragColor.r, 0.0, 1.0), 0.15);
-          vec4 colorTexture = mix(vec4(1.0, 1.0, 0.5, 1.0), vec4(1.0, 0.4, 0.2, 1.0), 1.2 * uv.y);
+          //vec4 colorTexture = mix(vec4(1.0, 1.0, 0.5, 1.0), vec4(1.0, 0.4, 0.2, 1.0), 1.2 * uv.y);
+          vec4 colorTexture = mix(vec4(color1, 1.0), vec4(color2, 1.0), 1.2 * uv.y);
           gl_FragColor *= colorTexture;
         }
         else if (useEffect > 2.0) {
@@ -979,6 +983,9 @@ function setupShaders() {
                 bloomIntensityUniform = gl.getUniformLocation(shaderProgram3, "bloomWeight");
                 sceneIntensityUniform = gl.getUniformLocation(shaderProgram3, "sceneWeight");
                 
+                fireColor1Uniform = gl.getUniformLocation(shaderProgram3, "color1");
+                fireColor2Uniform = gl.getUniformLocation(shaderProgram3, "color2");
+                
                 fireShaderProgram = shaderProgram3;
                 
             } // end if no shader program link errors
@@ -1094,70 +1101,70 @@ function renderModels() {
             var instanceNumber = whichTriSet;
             
             var thisInstance = modelInstances[whichTriSet];
-            
-            var lavaHeight = 0.0;
-            if (thisInstance.lavaHeight) {
-              lavaHeight = thisInstance.lavaHeight;
+            if (!thisInstance.invisible) {
+              var lavaHeight = 0.0;
+              if (thisInstance.lavaHeight) {
+                lavaHeight = thisInstance.lavaHeight;
+              }
+              
+              currSet = modelInstances[instanceNumber];
+              makeModelTransform(thisInstance);
+              mat4.multiply(pvmMatrix,pvMatrix,mMatrix); // project * view * model
+              gl.uniformMatrix4fv(mMatrixULoc, false, mMatrix); // pass in the m matrix
+              gl.uniformMatrix4fv(pvmMatrixULoc, false, pvmMatrix); // pass in the hpvm matrix
+              
+              
+              var colorOffset = lightPosition;
+              if (thisInstance.colorOffset) {
+                colorOffset = thisInstance.colorOffset;
+              }
+              gl.uniform3fv(lightPositionULoc,colorOffset);
+              
+              // reflectivity: feed to the fragment shader
+              
+              var colorOffset2 = currSet.material.ambient;
+              if (thisInstance.colorOffset) {
+                colorOffset2 = thisInstance.colorOffset2;
+              }
+              
+              gl.uniform3fv(ambientULoc,colorOffset2); // pass in the ambient reflectivity
+              gl.uniform3fv(diffuseULoc,currSet.material.diffuse); // pass in the diffuse reflectivity
+              gl.uniform3fv(specularULoc,currSet.material.specular); // pass in the specular reflectivity
+              gl.uniform1f(shininessULoc,currSet.material.n); // pass in the specular exponent
+              
+              var bp = Blinn_Phong;
+              if (thisInstance.ignoreLighting == true) {
+                bp = false;
+              }
+              
+              gl.uniform1i(Blinn_PhongULoc, bp);
+              // vertex buffer: activate and feed into vertex shader
+              gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffers[textureNumber]); // activate
+              gl.vertexAttribPointer(vPosAttribLoc,3,gl.FLOAT,false,0,0); // feed
+              gl.bindBuffer(gl.ARRAY_BUFFER,normalBuffers[textureNumber]); // activate
+              gl.vertexAttribPointer(vNormAttribLoc,3,gl.FLOAT,false,0,0); // feed
+              
+              gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffers[textureNumber]);
+              gl.vertexAttribPointer(uvAttrib, 2, gl.FLOAT, false, 0, 0);
+              
+              gl.uniform1f(alphaUniform, lavaHeight);
+              
+              
+              var tex;
+              if (!thisInstance.specialTexture) {
+                tex = textures[thisInstance.realTextureNumber];
+              }
+              else {
+                tex = thisInstance.specialTexture;
+              }
+              gl.activeTexture(gl.TEXTURE0);
+              gl.bindTexture(gl.TEXTURE_2D, tex);
+              
+              gl.uniform1i(texToggleUniform, texToggle);
+              // triangle buffer: activate and render
+              gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,triangleBuffers[textureNumber]); // activate
+              gl.drawElements(gl.TRIANGLES,3*triSetSizes[textureNumber],gl.UNSIGNED_SHORT,0); // render
             }
-            
-            currSet = modelInstances[instanceNumber];
-            makeModelTransform(thisInstance);
-            mat4.multiply(pvmMatrix,pvMatrix,mMatrix); // project * view * model
-            gl.uniformMatrix4fv(mMatrixULoc, false, mMatrix); // pass in the m matrix
-            gl.uniformMatrix4fv(pvmMatrixULoc, false, pvmMatrix); // pass in the hpvm matrix
-            
-            
-            var colorOffset = lightPosition;
-            if (thisInstance.colorOffset) {
-              colorOffset = thisInstance.colorOffset;
-            }
-            gl.uniform3fv(lightPositionULoc,colorOffset);
-            
-            // reflectivity: feed to the fragment shader
-            
-            var colorOffset2 = currSet.material.ambient;
-            if (thisInstance.colorOffset) {
-              colorOffset2 = thisInstance.colorOffset2;
-            }
-            
-            gl.uniform3fv(ambientULoc,colorOffset2); // pass in the ambient reflectivity
-            gl.uniform3fv(diffuseULoc,currSet.material.diffuse); // pass in the diffuse reflectivity
-            gl.uniform3fv(specularULoc,currSet.material.specular); // pass in the specular reflectivity
-            gl.uniform1f(shininessULoc,currSet.material.n); // pass in the specular exponent
-            
-            var bp = Blinn_Phong;
-            if (thisInstance.ignoreLighting == true) {
-              bp = false;
-            }
-            
-            gl.uniform1i(Blinn_PhongULoc, bp);
-            // vertex buffer: activate and feed into vertex shader
-            gl.bindBuffer(gl.ARRAY_BUFFER,vertexBuffers[textureNumber]); // activate
-            gl.vertexAttribPointer(vPosAttribLoc,3,gl.FLOAT,false,0,0); // feed
-            gl.bindBuffer(gl.ARRAY_BUFFER,normalBuffers[textureNumber]); // activate
-            gl.vertexAttribPointer(vNormAttribLoc,3,gl.FLOAT,false,0,0); // feed
-            
-            gl.bindBuffer(gl.ARRAY_BUFFER, uvBuffers[textureNumber]);
-            gl.vertexAttribPointer(uvAttrib, 2, gl.FLOAT, false, 0, 0);
-            
-            gl.uniform1f(alphaUniform, lavaHeight);
-            
-            
-            var tex;
-            if (!thisInstance.specialTexture) {
-              tex = textures[thisInstance.realTextureNumber];
-            }
-            else {
-              tex = thisInstance.specialTexture;
-            }
-            gl.activeTexture(gl.TEXTURE0);
-            gl.bindTexture(gl.TEXTURE_2D, tex);
-            
-            gl.uniform1i(texToggleUniform, texToggle);
-            // triangle buffer: activate and render
-            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,triangleBuffers[textureNumber]); // activate
-            gl.drawElements(gl.TRIANGLES,3*triSetSizes[textureNumber],gl.UNSIGNED_SHORT,0); // render
-
             
         } // end for each triangle set
       }
@@ -1206,7 +1213,7 @@ function renderModels() {
             
         } // end for each triangle set
       }
-      function run(input, noise, val, ignoreMovement) {
+      function run(input, noise, val, ignoreMovement, c1, c2) {
 
                   
         
@@ -1229,16 +1236,21 @@ function renderModels() {
           gl.activeTexture(gl.TEXTURE1);
           gl.bindTexture(gl.TEXTURE_2D, noise);
           
-          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,fireTriBuffer);
-          gl.drawElements(gl.TRIANGLES,3 * 2,gl.UNSIGNED_SHORT,0); // render
-          
-          
           gl.uniform1f(sceneIntensityUniform, sceneIntensity);
           gl.uniform1f(bloomIntensityUniform, bloomIntensity);
           gl.uniform1f(bloomThresholdUniform, bloomThreshold);
           
+          gl.uniform3fv(fireColor1Uniform, c1);
+          gl.uniform3fv(fireColor2Uniform, c2);
+          
+          
+          gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,fireTriBuffer);
+          gl.drawElements(gl.TRIANGLES,3 * 2,gl.UNSIGNED_SHORT,0); // render
+          
+          
+
       }
-      function renderFireToTexture(input, noise, texture, renderToBackground, fb) {
+      function renderFireToTexture(input, noise, texture, renderToBackground, fb, c1, c2) {
         gl.bindFramebuffer(gl.FRAMEBUFFER, fireFrameBuffer);
         attachmentPoint = gl.COLOR_ATTACHMENT0;
         gl.framebufferTexture2D(gl.FRAMEBUFFER, attachmentPoint, gl.TEXTURE_2D, texture, 0);
@@ -1246,12 +1258,12 @@ function renderModels() {
         
 
         gl.viewport(0, 0, 256, 256);
-        run(input, noise, 1.0, false);
+        run(input, noise, 1.0, false, c1, c2);
         gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
         gl.viewport(0, 0, 800, 800);
         if (renderToBackground) {
           gl.viewport(0, 270, 800, 800);
-          run(input, noise, 1.0, false);
+          run(input, noise, 1.0, false, c1, c2);
           // Clear depth so that fire appears behind everything
           gl.clear(gl.DEPTH_BUFFER_BIT);
           gl.viewport(0, 0, 800, 800);
@@ -1279,23 +1291,27 @@ function renderModels() {
       
       
       if (usePostProcessing >= 2.1) {
-      gl.bindFramebuffer(gl.FRAMEBUFFER, sceneBuffer);
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sceneTexture, 0);
-      //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true, sceneBuffer);
-      renderFireToTexture(beamTexture, beamNoiseTexture, beamOutputTexture, false, sceneBuffer);
-      renderTriangles();
-      renderLava();
-      
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-      
-      gl.useProgram(fireShaderProgram);
-      run(sceneTexture, heatDistortionTexture, usePostProcessing, false);
+        gl.bindFramebuffer(gl.FRAMEBUFFER, sceneBuffer);
+        gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sceneTexture, 0);
+        //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true, sceneBuffer, fireColor1, fireColor2);
+        renderFireToTexture(fireTexture, fireNoiseTexture, explosionTexture, false, sceneBuffer, explosionC1, explosionC2);
+        renderFireToTexture(beamTexture, beamNoiseTexture, beamOutputTexture, false, sceneBuffer, fireColor1, fireColor2);
+
+        renderTriangles();
+        renderLava();
+        
+        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        
+        gl.useProgram(fireShaderProgram);
+        run(sceneTexture, heatDistortionTexture, usePostProcessing, false, fireColor1, fireColor2);
+        
       }
       else {
         
-        renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true, null);
-        renderFireToTexture(beamTexture, beamNoiseTexture, beamOutputTexture, false, null);
+        renderFireToTexture(fireTexture, fireNoiseTexture, fireTexture2, true, null, fireColor1, fireColor2);
+        renderFireToTexture(fireTexture, fireNoiseTexture, explosionTexture, false, sceneBuffer, explosionC1, explosionC2);
+        renderFireToTexture(beamTexture, beamNoiseTexture, beamOutputTexture, false, null, fireColor1, fireColor2);
         renderTriangles();
         renderLava(); 
       }

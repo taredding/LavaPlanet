@@ -11,15 +11,22 @@ const SHIP_MAX_Z = 0.5 - 0.5;
 const SEPARATION_THRESHOLD = 0.015;
 const MOTHERSHIP_HEIGHT = 1.5;
 const BEAM_HEIGHT = MOTHERSHIP_HEIGHT - 0.42;
+const DEF_EXP_TIME = 1.0;
 
 var colorPairs = [];
 var beams = [];
 var beamTexture;
 var beamNoiseTexture;
 var beamOutputTexture;
+var explosionTexture;
+var explosionC1 = vec3.fromValues(0.5, 1.0, 0.5);
+var explosionC2 = vec3.fromValues(0.2, 1.0, 0.1);
 
 var mothership;
 
+var defaultScale = vec3.fromValues(1, 1, 1);
+vec3.normalize(defaultScale, defaultScale);
+vec3.scale(defaultScale, defaultScale, 0.05);
 
 /*
 ok so i need a function that calculates the updated velocity for all ships
@@ -84,6 +91,7 @@ function createShips() {
   mothership.colorOffset = mColors[0];
   mothership.colorOffset2 = mColors[1];
   
+  explosionTexture = addNullTexture(256);
   
   var beam1 = createModelInstance("beam", 0.5, MOTHERSHIP_HEIGHT, -1.5);
   beam1.offset = 0.3;
@@ -189,14 +197,17 @@ function avoidLava(ship) {
   var velocity = vec3.create();
   
   if (ship.position[1] < lavaLoc[1]) {
+
     console.log("Ship hit lava!");
+    ship.showExplosion();
     vec3.set(ship.position, mothership.translation[0], mothership.translation[1], mothership.translation[2]);
+    
   }
   
   var distance = vec3.distance(ship.position, lavaLoc);
   
   if (distance < 0.2) {
-    velocity[1] += 0.5;
+    velocity[1] += 0.05;
   }
   
   ship.model.lavaHeight = height;
@@ -331,8 +342,11 @@ function Ship(x, y, z) {
   this.thruster = createModelInstance("thruster", x, y, z);
   this.thruster.ignoreLighting = true;
   this.thruster.translation = this.model.translation;
-  
-  
+  this.explosion = createModelInstance("sphere", x, y, z);
+  this.explosion.specialTexture = explosionTexture;
+  this.explosion.invisible = true;
+  this.explosion.ignoreLighting = true;
+  this.explosionTime = DEF_EXP_TIME;
   var colors = getRandomColors();
   this.model.colorOffset = colors[0];
   this.model.colorOffset2 = colors[1];
@@ -365,8 +379,28 @@ function Ship(x, y, z) {
     this.thruster.yAxis = this.model.yAxis;
     this.thruster.xAxis = this.model.xAxis;
     var val = 0.005 * ( 1.0 + Math.sin(counter * 16.0)) + 0.02;
-    vec3.set(this.thruster.scaling, val, val, 0.022);
+    //vec3.set(this.thruster.scaling, val, val, 0.022);
+    //console.log(time);
+    if (!this.explosion.invisible) {
+      this.explosionTime -= time / 1000;
+      scaleUniform(this.explosion, 1.02);
+      if (this.explosionTime <= 0.0) {
+        this.hideExplosion();
+      }
+    }
+    
    //this.position[1] = h;
+  }
+  
+  this.hideExplosion = function() {
+    this.explosion.invisible = true;
+  }
+  this.showExplosion = function() {
+    playExplosionNoise();
+    this.explosionTime = DEF_EXP_TIME;
+    this.explosion.invisible = false;
+    this.explosion.scaling = vec3.clone(defaultScale);
+    this.explosion.translation = vec3.clone(this.model.translation);
   }
   
 }

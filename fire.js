@@ -28,7 +28,10 @@ var fireNoiseShift = 0.0;
 var firePanel;
 var heatDistortionTexture;
 
-
+var fireColor1 = vec3.fromValues(1.0, 1.0, 0.5);
+var fireColor2 = vec3.fromValues(1.0, 0.4, 0.2);
+var fireColor1Uniform;
+var fireColor2Uniform;
 
 var bloomIntensity = 0.2;
 var bloomThreshold = 1.9;

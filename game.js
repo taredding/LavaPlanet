@@ -1,5 +1,6 @@
 var backGroundMusic = null;
 var shipNoise = null;
+var explosionNoise = null;
 var audios = [];
 var muted = true;
 
@@ -37,7 +38,7 @@ function updateGame(elapsedTime) {
 }
 
 function watchShip(shipNum) {
-  Center = vec3.clone(ships[shipNum].position);
+  Center = vec3.clone(ships[shipNum].explosion.translation);
   Eye = vec3.clone(Center);
   Eye[1] += 0.4;
   Eye[2] += 0.3;
@@ -60,6 +61,8 @@ function setupGame() {
   
   backGroundMusic = createAudio("lava_ambience2.wav", 2.0, true, true);
   shipNoise = createAudio("shipNoise.wav", 1.0, false, true);
+  explosionNoise = createAudio("explosion.wav", 1.0, false, false);
+  explosionNoise.volume = 0.5;
   
   loadLava();
 }
@@ -87,6 +90,13 @@ function toggleAudio() {
       a.play();
     }
     audios[i].muted = muted;
+  }
+}
+
+function playExplosionNoise() {
+  if (explosionNoise) {
+    explosionNoise.currentTime = 0.0;
+    explosionNoise.play();
   }
 }
 
