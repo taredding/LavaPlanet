@@ -18,7 +18,7 @@ function updateGame(elapsedTime) {
   for (var i = 0; i < ships.length; i++) {
     var dist = vec3.dist(Eye, ships[i].position) / LAVA_DEPTH;
     
-    shipVolume += 1.0 / dist / 2000.0;
+    shipVolume += 1.0 / (dist + 0.001) / 2000.0;
   //console.log(shipVolume);
   //console.log(shipVolume);
 

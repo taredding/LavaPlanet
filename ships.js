@@ -28,6 +28,15 @@ var defaultScale = vec3.fromValues(1, 1, 1);
 vec3.normalize(defaultScale, defaultScale);
 vec3.scale(defaultScale, defaultScale, 0.05);
 
+
+var goalPoint = vec3.fromValues(0.5, 1.2, -1.3);
+
+const STATE_WAIT = 0;
+const STATE_LEAVE_SHIP = 1;
+const STATE_GOTO_MOTHER1 = 2;
+const STATE_GOTO_MOTHER2 = 3;
+const STATE_FLOCK = 4;
+
 /*
 ok so i need a function that calculates the updated velocity for all ships
 
@@ -144,20 +153,24 @@ function updateShipVelocity(shipIndex) {
   // for every ship
   // get each velocity change
   bound = boundPosition(shipIndex);
-  separation = calculateSeparation(shipIndex);
+  separation = calculateSeparation(ships[shipIndex]);
   cohesion = calculateCohesion(shipIndex);
   alignment = calculateAlignment(shipIndex);
-  var lava = avoidLava(ships[shipIndex]);
+  var lavaResults = avoidLava(ships[shipIndex]);
+  var lava = lavaResults.velocity;
+  var mothership = avoidMothership(ships[shipIndex]);
   
   // new velocity
   
   var tempVelocity = vec3.create();
-  vec3.add(tempVelocity, tempVelocity, lava);
-  vec3.add(tempVelocity, tempVelocity, separation);
-  vec3.add(tempVelocity, tempVelocity, cohesion);
-  vec3.add(tempVelocity, tempVelocity, bound);
-  vec3.add(tempVelocity, tempVelocity, alignment);
-  
+  if (!lavaResults.hitLava) {
+    vec3.add(tempVelocity, tempVelocity, lava);
+    vec3.add(tempVelocity, tempVelocity, separation);
+    vec3.add(tempVelocity, tempVelocity, cohesion);
+    vec3.add(tempVelocity, tempVelocity, bound);
+    vec3.add(tempVelocity, tempVelocity, alignment);
+    vec3.add(tempVelocity, tempVelocity, mothership);
+  }
   
 
   //console.log("new ship velocity: " + tempVelocity);
@@ -190,46 +203,84 @@ function boundPosition(index) {
   return boundingVelocity;
 }
 
+function avoidMothership(ship) {
+  const radius = 0.2;
+  var avoidVel = vec3.fromValues(0.0, 0.0, 0.0);
+  
+  var dist = vec3.distance(ship.position, mothership.translation);
+  
+  if (dist <= 0.9) {
+    var xDif = ship.position[0] - mothership.translation[0];
+    var yDif = ship.position[0] - mothership.translation[0];
+    var zDif = ship.position[0] - mothership.translation[0];
+    
+    if (xDif > 0 && xDif <= 0.75 + radius) {
+      avoidVel[0] += 1.0;
+    }
+    else if (xDif < 0 && Math.abs(xDif) <= 0.9 + radius) {
+      avoidVel[0] -= 1.0;
+    }
+    if (yDif > 0 && yDif <= 0.4 + radius) {
+      avoidVel[1] += 1.0;
+    }
+    else if (yDif < 0 && Math.abs(yDif) <= 1.0 + radius) {
+      avoidVel[1] -= 0.1;
+    }
+    if (zDif > 0 && zDif <= 0.4 + radius) {
+      avoidVel[2] += 1.0;
+    }
+    else if (zDif < 0 && Math.abs(zDif) <= 0.4 + radius) {
+      avoidVel[2] -= 1.0;
+    }
+    
+  }
+  
+  vec3.normalize(avoidVel, avoidVel);
+  vec3.scale(avoidVel, avoidVel, 0.4);
+  return avoidVel;
+}
+
 function avoidLava(ship) {
   var height = getHeightOfLava(ship.position);
   var lavaLoc = vec3.clone(ship.position);
   lavaLoc[1] = height;
   var velocity = vec3.create();
-  
-  if (ship.position[1] < lavaLoc[1]) {
-
+  var hitLava = false;
+  if (ship.position[1] < lavaLoc[1] && ship.position[2] >= LAVA_MIN_Z) {
+    hitLava = true;
     console.log("Ship hit lava!");
     ship.showExplosion();
+    ship.state = STATE_WAIT;
     vec3.set(ship.position, mothership.translation[0], mothership.translation[1], mothership.translation[2]);
+    vec3.set(ship.velocity, 0, 0, MAX_VELOCITY);
     
   }
   
   var distance = vec3.distance(ship.position, lavaLoc);
   
-  if (distance < 0.2) {
-    velocity[1] += 0.05;
+  if (distance < 0.5) {
+    velocity[1] += 0.08;
   }
   
   ship.model.lavaHeight = height;
   
-  return velocity;
+  return {velocity:velocity, hitLava: hitLava};
 }
 
 /* Calculate how far ship needs to move away from neighbors */
-function calculateSeparation(index) {
+function calculateSeparation(ship) {
 
   var s = vec3.create();
   var distanceVector = vec3.create();
   
-  
   for (var i = 0; i < ships.length; i++) {
-    if (i != index) {
+    if (ships[i] != ship) {
       //console.log(ships[i].position);
-      var distanceMagnitude = vec3.distance(ships[i].position, ships[index].position);
+      var distanceMagnitude = vec3.distance(ships[i].position, ship.position);
       //console.log("distanceMagnitude: " + distanceMagnitude);
-      distanceVector = vec3.subtract(distanceVector, ships[i].position, ships[index].position);
+      distanceVector = vec3.subtract(distanceVector, ships[i].position, ship.position);
       
-      if (distanceMagnitude < 0.05) {
+      if (distanceMagnitude < 0.1) {
         vec3.scale(distanceVector, distanceVector, 1.0);
         vec3.subtract(s, s, distanceVector);
       }
@@ -350,14 +401,48 @@ function Ship(x, y, z) {
   var colors = getRandomColors();
   this.model.colorOffset = colors[0];
   this.model.colorOffset2 = colors[1];
-  this.explosionNoise = explosionNoise.cloneNode(true);
-  audios.push(this.explosionNoise);
+  //this.explosionNoise = explosionNoise.cloneNode(true);
+  //audios.push(this.explosionNoise);
   
   vec3.normalize(this.model.colorOffset, this.model.colorOffset);
-  
+  this.state = STATE_FLOCK;
+  this.waitTime = Math.random() * 4.0 + 0.2;
   this.update = function(time, shipIndex) {
     var elapsedSeconds = time / 1000;
-    var vAdd = updateShipVelocity(shipIndex);
+    
+    
+    
+    var vAdd;
+
+    switch (this.state) {
+      case STATE_WAIT:
+        this.waitTime -= elapsedSeconds;
+        vAdd = vec3.fromValues(0, 0, 0);
+        if (this.waitTime <= 0) {
+          this.waitTime = Math.random() * 4.0 + 0.2;
+          this.state = STATE_LEAVE_SHIP;
+        }
+      break;
+      case STATE_LEAVE_SHIP:
+        vAdd = vec3.fromValues(0.0, 0.0, 0.0);
+        if (vec3.distance(this.position, goalPoint) < 0.1) {
+          this.state = STATE_FLOCK;
+        }
+        else {
+          vec3.subtract(vAdd, goalPoint, this.position);
+          vec3.add(vAdd, vAdd, calculateSeparation(this));
+        }
+        break;
+      case STATE_GOTO_MOTHER1:
+      break;
+      case STATE_GOTO_MOTHER2:
+      break;
+      case STATE_FLOCK:
+        vAdd = updateShipVelocity(shipIndex);
+      break;
+    
+
+    }
     vec3.scale(vAdd, vAdd, elapsedSeconds);
     
     vec3.add(this.velocity, this.velocity, vAdd);
@@ -375,8 +460,9 @@ function Ship(x, y, z) {
       dir = -1;
     }
     //this.position[1] += dir * 0.01;
-    
-    vec3.add(this.position, this.position, this.velocity);
+    if (this.state != STATE_WAIT) {
+      vec3.add(this.position, this.position, this.velocity);
+    }
     rotateShip(this);
     this.thruster.yAxis = this.model.yAxis;
     this.thruster.xAxis = this.model.xAxis;
@@ -398,12 +484,12 @@ function Ship(x, y, z) {
     this.explosion.invisible = true;
   }
   this.showExplosion = function() {
-    //playExplosionNoise();
-    this.explosionNoise.volume = Math.max(1.0 - vec3.distance(this.position, Eye), 0.05);
-    this.explosionNoise.currentTime = 0.0;
-    if (!muted) {
-      this.explosionNoise.play();
-    }
+    playExplosionNoise();
+    //this.explosionNoise.volume = Math.max(1.0 - vec3.distance(this.position, Eye), 0.05);
+    //this.explosionNoise.currentTime = 0.0;
+    //if (!muted) {
+      //this.explosionNoise.play();
+    //}
     this.explosionTime = DEF_EXP_TIME;
     this.explosion.invisible = false;
     this.explosion.scaling = vec3.clone(defaultScale);
