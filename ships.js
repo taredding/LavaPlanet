@@ -350,6 +350,8 @@ function Ship(x, y, z) {
   var colors = getRandomColors();
   this.model.colorOffset = colors[0];
   this.model.colorOffset2 = colors[1];
+  this.explosionNoise = explosionNoise.cloneNode(true);
+  audios.push(this.explosionNoise);
   
   vec3.normalize(this.model.colorOffset, this.model.colorOffset);
   
@@ -396,7 +398,12 @@ function Ship(x, y, z) {
     this.explosion.invisible = true;
   }
   this.showExplosion = function() {
-    playExplosionNoise();
+    //playExplosionNoise();
+    this.explosionNoise.volume = Math.max(1.0 - vec3.distance(this.position, Eye), 0.05);
+    this.explosionNoise.currentTime = 0.0;
+    if (!muted) {
+      this.explosionNoise.play();
+    }
     this.explosionTime = DEF_EXP_TIME;
     this.explosion.invisible = false;
     this.explosion.scaling = vec3.clone(defaultScale);

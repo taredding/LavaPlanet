@@ -18,14 +18,18 @@ function updateGame(elapsedTime) {
   for (var i = 0; i < ships.length; i++) {
     var dist = vec3.dist(Eye, ships[i].position) / LAVA_DEPTH;
     
-    shipVolume += 1.0 / dist / 1000.0;
+    shipVolume += 1.0 / dist / 2000.0;
   //console.log(shipVolume);
   //console.log(shipVolume);
-  shipVolume = Math.min(1.0, Math.max(0.0, shipVolume));
+
   
-  //shipNoise.volume = shipVolume;
+
     ships[i].update(elapsedTime, i);
   }
+  shipVolume = Math.min(1.0, Math.max(0.0, shipVolume));
+  //console.log(shipVolume);
+  shipNoise.volume = shipVolume;
+  
   updateFire(elapsedTime);
   counter += Math.PI / 1000.0 * elapsedTime;
   var val = 0.1 * Math.sin(counter);
@@ -49,6 +53,11 @@ function setupGame() {
   modelInstances = [];
   lavaPanels = [];
   lavaWaves = [];
+  
+  
+  explosionNoise = createAudio("explosion.wav", 1.0, false, false);
+  explosionNoise.volume = 0.5;
+  
   loadFire();
   createShips();
 
@@ -60,9 +69,8 @@ function setupGame() {
   }
   
   backGroundMusic = createAudio("lava_ambience2.wav", 2.0, true, true);
-  shipNoise = createAudio("shipNoise.wav", 1.0, false, true);
-  explosionNoise = createAudio("explosion.wav", 1.0, false, false);
-  explosionNoise.volume = 0.5;
+  shipNoise = createAudio("ship3.ogg", 1.0, true, true);
+
   
   loadLava();
 }
