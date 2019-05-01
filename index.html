@@ -4,36 +4,44 @@
     <link rel="shortcut icon" href="icon.PNG"/>
     <meta charset="UTF-8">
     <title>Program 3: Flocking + Lava </title>
-    
     <link type="text/css" rel="stylesheet" href="rasterize.css">
   </head>
 
   <body onload="main();">
     <div class="row">
       <div id="mainDiv" class="column" >
-      <img src="./textures/black.png" id="myImageCanvas" width="800" height="800"></canvas>
+        <img src="./textures/black.png" id="myImageCanvas" width="800" height="800">
         <canvas  id="myWebGLCanvas" width="800" height="800"></canvas>
       </div>
       <div class="column" id="scoreboard">
-        <input type="button" value="Reset Game" onclick="setupGame()"/> <br />
-        Raw FPS: <label id="fps">---</label> <br />
-        Smooth FPS: <label id="fpsSmooth">---</label> <br />
-        
-        <button onclick="returnToMothership()">Return to Mothership</button> <br />
-        <button onclick="leaveMothership()">Exit Mothership</button> <br />
-        <button onclick="scatter()">Scatter!</button> <br />
-        <button onclick="converge()">Converge!</button> <br />
-        
-        <button onclick="toggleAudio()">Toggle Audio</button> <br />
-        Red:   <input type="range" min="-100" max="100" value="0" class="slider" id="rOff" oninput="updateColors()"> <br />
-        Green: <input type="range" min="-100" max="100" value="0" class="slider" id="gOff" oninput="updateColors()"><br />
-        Blue:  <input type="range" min="-100" max="100" value="0" class="slider" id="bOff" oninput="updateColors()"><br />
-        Bloom Intensity:  <input type="range" min="-100" max="100" value="20" class="slider" id="bloomInt" oninput="updateBloom()"><br />
-        Bloom Threshold:  <input type="range" min="0" max="400" value="190" class="slider" id="bloomThresh" oninput="updateBloom()"><br />
-        Scene Intensity:  <input type="range" min="0" max="100" value="100" class="slider" id="sceneInt" oninput="updateBloom()"><br />
-        <button onclick="resetColors()">Reset colors</button> <br />
-        <button onclick="invert()">Invert colors</button> <br />
-        <button onclick="togglePostProcessing()">Toggle Post Processing</button> <br />
+        <div>
+          <h2>Game Controls</h2>
+          <div class="stat">
+            Raw FPS: <label id="fps">---</label><br/>
+            Smooth FPS: <label id="fpsSmooth">---</label> <br/>
+          </div>
+          <input type="button" value="Reset Game" class="game-control" onclick="setupGame()"/><br/>
+          <button class="game-control" onclick="toggleAudio()">Toggle Audio</button><br/>
+        </div>
+        <div>
+          <h2>Ship Controls</h2>
+          <button class="game-control " onclick="scatter()">Scatter!</button><br/>
+          <button class="game-control" onclick="converge()">Converge!</button><br/>
+          <button class="game-control" onclick="returnToMothership()">Return to Mothership</button><br/>
+          <button class="game-control" onclick="leaveMothership()">Exit Mothership</button><br/>
+        </div>
+        <div>
+          <h2>Post Processing Controls</h2>
+          <button class="game-control" onclick="togglePostProcessing()">Toggle Post Processing</button><br/>
+          Red:<input type="range" min="-100" max="100" value="0" class="slider-control-red" id="rOff" oninput="updateColors()"><br/>
+          Green:<input type="range" min="-100" max="100" value="0" class="slider-control" id="gOff" oninput="updateColors()"><br/>
+          Blue:<input type="range" min="-100" max="100" value="0" class="slider-control-blue" id="bOff" oninput="updateColors()"><br/>
+          Bloom Intensity:<input type="range" min="-100" max="100" value="20" class="slider-control" id="bloomInt" oninput="updateBloom()"><br/>
+          Bloom Threshold:<input type="range" min="0" max="400" value="190" class="slider-control" id="bloomThresh" oninput="updateBloom()"><br/>
+          Scene Intensity:<input type="range" min="0" max="100" value="100" class="slider-control" id="sceneInt" oninput="updateBloom()"><br/>
+          <button class="game-control" onclick="resetColors()">Reset colors</button><br/>
+          <button class="game-control" onclick="invert()">Invert colors</button><br/>
+        </div>
       </div>
     </div>
   </body>
