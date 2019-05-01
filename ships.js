@@ -30,12 +30,34 @@ vec3.scale(defaultScale, defaultScale, 0.05);
 
 
 var goalPoint = vec3.fromValues(0.5, 1.2, -1.3);
+var goalPoint2 = vec3.fromValues(0.5, 1.6, -1.3);
 
 const STATE_WAIT = 0;
 const STATE_LEAVE_SHIP = 1;
 const STATE_GOTO_MOTHER1 = 2;
 const STATE_GOTO_MOTHER2 = 3;
 const STATE_FLOCK = 4;
+const STATE_PERMAWAIT = 5;
+
+
+var cohesionCoefficient = 0.04;
+var seperationCoefficient = 3.0;
+var alignmentCoefficient = 0.4;
+
+function converge() {
+  playConvergeAudio();
+  cohesionCoefficient = 0.04;
+  seperationCoefficient = 3.0;
+  alignmentCoefficient = 0.4;
+} 
+
+function scatter() {
+  playScatterAudio();
+  cohesionCoefficient = 0.00;
+  seperationCoefficient = 5.0;
+  alignmentCoefficient = 0.0;
+}
+
 
 /*
 ok so i need a function that calculates the updated velocity for all ships
@@ -289,7 +311,7 @@ function calculateSeparation(ship) {
   
   
   //return s;
-  vec3.scale(s, s, 3.0);
+  vec3.scale(s, s, seperationCoefficient);
   return s;
 }
 
@@ -309,7 +331,7 @@ function calculateCohesion(index) {
 
   var tempCOM = vec3.create();
   vec3.subtract(tempCOM, centerOfMass, ships[index].position);
-  vec3.scale(tempCOM, tempCOM, 0.01);
+  vec3.scale(tempCOM, tempCOM, cohesionCoefficient);
 
   return tempCOM;
 }
@@ -326,7 +348,7 @@ function calculateAlignment(index) {
 
   vec3.scale(perceivedVelocity, perceivedVelocity, 1.0/(ships.length - 1));
 
-  vec3.scale(perceivedVelocity, perceivedVelocity, 0.4);
+  vec3.scale(perceivedVelocity, perceivedVelocity, alignmentCoefficient);
 
   return perceivedVelocity;
 }
@@ -412,12 +434,12 @@ function Ship(x, y, z) {
     
     
     
-    var vAdd;
+    var vAdd = vec3.fromValues(0, 0, 0);
 
     switch (this.state) {
       case STATE_WAIT:
         this.waitTime -= elapsedSeconds;
-        vAdd = vec3.fromValues(0, 0, 0);
+        
         if (this.waitTime <= 0) {
           this.waitTime = Math.random() * 4.0 + 0.2;
           this.state = STATE_LEAVE_SHIP;
@@ -425,7 +447,9 @@ function Ship(x, y, z) {
       break;
       case STATE_LEAVE_SHIP:
         vAdd = vec3.fromValues(0.0, 0.0, 0.0);
-        if (vec3.distance(this.position, goalPoint) < 0.1) {
+        if (vec3.distance(this.position, goalPoint) < 0.3) {
+          vAdd[0] += Math.random() * 0.2 - 0.1;
+          vAdd[1] += Math.random() * 0.2 - 0.1;
           this.state = STATE_FLOCK;
         }
         else {
@@ -434,11 +458,39 @@ function Ship(x, y, z) {
         }
         break;
       case STATE_GOTO_MOTHER1:
+        var dist = vec3.distance(this.position, goalPoint);
+        if (dist < 0.4) {
+          this.state = STATE_GOTO_MOTHER2;
+        }
+        else {
+          vec3.subtract(vAdd, goalPoint2, this.position);
+
+          var sep = calculateSeparation(this);
+          vec3.scale(sep, sep, Math.min(1.0, dist / 2.0));
+          vec3.add(vAdd, vAdd, sep);
+          vec3.add(vAdd, vAdd, avoidMothership(this));
+        }
       break;
       case STATE_GOTO_MOTHER2:
+        var dist = vec3.distance(this.position, mothership.translation);
+        if (dist < 0.3) {
+          vec3.set(this.position, mothership.translation[0], mothership.translation[1] + 0.2, mothership.translation[2]);
+          vec3.set(this.velocity, 0, 0, 0);
+          this.state = STATE_PERMAWAIT;
+        }
+        else {
+          vec3.subtract(vAdd, mothership.translation, this.position);
+          var sep = calculateSeparation(this);
+          vec3.scale(sep, sep, Math.min(1.0, dist / 2.0));
+          vec3.add(vAdd, vAdd, sep);
+        }
       break;
       case STATE_FLOCK:
         vAdd = updateShipVelocity(shipIndex);
+      break;
+      case STATE_PERMAWAIT:
+        vec3.set(this.position, mothership.translation[0], mothership.translation[1] + 0.2, mothership.translation[2]);
+        vAdd = vec3.fromValues(0.0, 0.0, 0.0);
       break;
     
 
@@ -460,7 +512,7 @@ function Ship(x, y, z) {
       dir = -1;
     }
     //this.position[1] += dir * 0.01;
-    if (this.state != STATE_WAIT) {
+    if (this.state != STATE_WAIT && this.state != STATE_PERMAWAIT) {
       vec3.add(this.position, this.position, this.velocity);
     }
     rotateShip(this);
@@ -498,3 +550,34 @@ function Ship(x, y, z) {
   
 }
 
+function returnToMothership() {
+  playReturnAudio();
+  for (var i = 0; i < ships.length; i++) {
+    var ship = ships[i];
+    
+    var dist = vec3.distance(ship.position, mothership.translation);
+    if (ship.state!= STATE_PERMAWAIT && ship.state != STATE_WAIT) {
+    if (ship.state == STATE_GOTO_MOTHER2) {
+      ship.state = STATE_GOTO_MOTHER2;
+    }
+    else {
+      ship.state = STATE_GOTO_MOTHER1;
+    }
+    }
+  }
+}
+
+function leaveMothership() {
+  playLaunchAudio();
+  for (var i = 0; i < ships.length; i++) {
+    var ship = ships[i];
+    if (ship.state == STATE_PERMAWAIT || ship.state == STATE_WAIT) {
+      ship.waitTime = Math.random() * 4.0 + 0.2;
+      ship.state = STATE_WAIT;
+    }
+    else if (ship.state != STATE_LEAVE_SHIP) {
+     ship.state = STATE_FLOCK; 
+    }
+    
+  }
+}

@@ -1046,8 +1046,8 @@ function updateTimers(gameTime, renderTime) {
   updaterNum++;
   if (updaterNum % 30 == 0) {
     updaterNum = 0;
-    gameUpdateIndicator.innerHTML = lastGameUpdateTime.toFixed(5);
-    renderUpdateIndicator.innerHTML = lastRenderTime.toFixed(5);
+    //gameUpdateIndicator.innerHTML = lastGameUpdateTime.toFixed(5);
+    //renderUpdateIndicator.innerHTML = lastRenderTime.toFixed(5);
   }
 }
 

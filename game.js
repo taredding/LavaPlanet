@@ -1,8 +1,16 @@
 var backGroundMusic = null;
 var shipNoise = null;
 var explosionNoise = null;
+
+var launchAudio = null;
+var returnAudio = null;
+var scatterAudio = null;
+var convergeAudio = null;
+
 var audios = [];
+var commandAudios = [];
 var muted = true;
+var audioInit = false;
 
 var ships = [];
 var frameNum = 0;
@@ -70,9 +78,40 @@ function setupGame() {
   
   backGroundMusic = createAudio("lava_ambience2.wav", 2.0, true, true);
   shipNoise = createAudio("ship3.ogg", 1.0, true, true);
-
+  commandAudios = [];
+  
+  launchAudio = createAudio("launch.wav", 1.0, false, false);
+  returnAudio = createAudio("return.wav", 1.0, false, false);
+  convergeAudio = createAudio("converge.wav", 1.0, false, false);
+  scatterAudio = createAudio("scatter.wav", 1.0, false, false);
+  
+  commandAudios.push(launchAudio, returnAudio, convergeAudio, scatterAudio);
   
   loadLava();
+}
+
+
+function playLaunchAudio() {
+  playCommandAudio(launchAudio);
+}
+
+function playReturnAudio() {
+  playCommandAudio(returnAudio);
+}
+function playConvergeAudio() {
+  playCommandAudio(convergeAudio);
+}
+function playScatterAudio() {
+  playCommandAudio(scatterAudio);
+}
+function playCommandAudio(audio) {
+  if (audioInit) {
+    for (var i = 0; i < commandAudios.length; i++) {
+      commandAudios[i].pause();
+      commandAudios[i].currentTime = 0;
+    }
+    audio.play();
+  }
 }
 
 function createAudio(name, speed, play, loop) {
@@ -91,6 +130,9 @@ function createAudio(name, speed, play, loop) {
 }
 
 function toggleAudio() {
+  if (!audioInit) {
+    audioInit = true;
+  }
   muted = !muted;
   for (var i = 0; i < audios.length; i++) {
     var a = audios[i];
@@ -102,7 +144,7 @@ function toggleAudio() {
 }
 
 function playExplosionNoise() {
-  if (explosionNoise) {
+  if (explosionNoise && audioInit) {
     explosionNoise.currentTime = 0.0;
     explosionNoise.play();
   }
