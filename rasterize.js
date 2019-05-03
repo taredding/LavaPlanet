@@ -2,7 +2,7 @@
 
 /* assignment specific globals */
 //var INPUT_TRIANGLES_URL = "https://taredding.github.io/tempLava/models.json"; // triangles file loc
-var BASE_URL = "https://taredding.github.io/tempLava/";
+var BASE_URL = "https://taredding.github.io/LavaPlanet/";
 
 //var INPUT_TRIANGLES_URL = "http://127.0.0.1/CGA_Proj_3/models.json"; // triangles file loc
 //var BASE_URL = "http://127.0.0.1/CGA_Proj_3/";
